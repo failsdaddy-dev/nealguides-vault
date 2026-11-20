@@ -1,12 +1,14 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { ArrowRightIcon, DownloadIcon, LockIcon, PlayIcon, SECTION_ICONS } from "@/components/icons";
+import { LandingIntro } from "@/components/landing-intro";
 import { Wordmark } from "@/components/top-bar";
 import { APP_NAME, LOGO_SRC } from "@/lib/brand";
 
 // Public front door for logged-out visitors. It shows no library content
 // (no card titles, counts or links): only what the Vault is and a way to
 // sign in. Signed-in visitors are sent to the library by the proxy.
+// LandingIntro plays a short boot animation over it on first visit per tab.
 
 const AREAS: { kind: keyof typeof SECTION_ICONS; title: string }[] = [
   { kind: "gameplay", title: "FC gameplay clips" },
@@ -26,6 +28,7 @@ const delay = (i: number) => ({ "--i": i }) as CSSProperties;
 export default function Landing() {
   return (
     <div className="flex min-h-screen flex-col">
+      <LandingIntro />
       <header className="sticky top-0 z-40 border-b border-line bg-bg/85 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
           <Wordmark />

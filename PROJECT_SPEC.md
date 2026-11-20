@@ -12,7 +12,7 @@ Where this table conflicts with later sections, this table wins.
 |---|---|---|
 | 1 | RohTre path | `C:\Agents\rohtre-vault`; build in `C:\Agents\nealguides-vault` |
 | 2 | Setup | Claude does the setup (env, CLI link); migrations still wait for approval |
-| 3 | Name | **Neal Guide** (page title, header) |
+| 3 | Name | **Neal Guides** (page title, header; renamed from "Neal Guide" at the user's request) |
 | 4 | Domain | Decide at deployment (Phase 4) |
 | 5 | Sidebar | FC Gameplay Clips with a **Shorts** subsection |
 | 6-8 | More sections | Effects, **Music**, **Backgrounds**: all approved |

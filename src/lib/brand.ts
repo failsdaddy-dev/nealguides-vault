@@ -1,8 +1,8 @@
 // One place for the product name, the default landing section and brand
 // files, so renaming never means hunting through components.
 
-export const APP_NAME = "Neal Guide";
-/** Shown in the browser tab: "<page> · Neal Guide". */
+export const APP_NAME = "Neal Guides";
+/** Shown in the browser tab: "<page> · Neal Guides". */
 export const TITLE_SUFFIX = ` · ${APP_NAME}`;
 
 /** Where signed-in visitors land, and the fallback for ?next=. */
