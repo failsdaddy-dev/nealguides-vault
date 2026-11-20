@@ -198,11 +198,11 @@ code changes. I will seed only the approved list.
 
 Same design as RohTre, adapted:
 
-- `profiles`: id, email, display_name, role (`admin`|`editor`), is_active, all_access, expires_at, timestamps. (`must_change_password` dropped.)
-- `sections`: id, slug, name, kind (`clip`|`audio`|`image`, decides which preview the editor form asks for), icon key, sort_order, is_visible.
+- `profiles`: id, email, display_name, role (`admin`|`editor`), is_active, all_access (**default true**, decision 14), expires_at, timestamps. (`must_change_password` dropped.)
+- `sections`: id, slug, name, kind (`gameplay`|`effect`|`music`|`background`, decides the icon and default preview type), sort_order, is_visible.
 - `subsections` (**new**): id, section_id, slug (unique per section), name, sort_order, is_visible.
-- `cards`: id, section_id, subsection_id (nullable, must belong to the same section), slug, title, description, status (`draft`|`published`), sort_order, preview_clip (jsonb), preview_image (jsonb, **new**), audio_preview (jsonb, only if Music approved), `link_hosts text[]` (badge labels, readable), `has_downloads`, filter_text, search_tsv, published_at, created_by, timestamps. Dropped from RohTre: youtube_id, preview_start/end, loom_url, source_url, has_project_files (no full-video modal or Loom tutorial was asked for; say if you want them back).
-- `card_links`: id, card_id, label (for example "1080p", "4K", "Pack"), url (https only, **never granted to browser roles**), host (computed: `google-drive`, `mega`, `dropbox`, `wetransfer`, `other`), sort_order. One or more per card.
+- `cards`: id, section_id, subsection_id (nullable, must belong to the same section), slug, title, description, status (`draft`|`published`), sort_order, media_type (`youtube`|`audio`|`image`), preview_clip, audio_preview, preview_image (**new**) (jsonb), `link_hosts text[]` (badge keys, readable), has_project_files, has_downloads, filter_text, search_tsv, published_at, created_by, timestamps. Kept from RohTre per decision 19: youtube_id, preview_start/end, loom_url, source_url.
+- `card_links`: id, card_id, kind (`project`|`download`, as RohTre), label (for example "1080p", "4K", "Premiere Pro"), url (https only, no user:password@, max 2,000 chars, **never granted to browser roles**), host (computed: `google-drive`, `mega`, `dropbox`, `wetransfer`, `other`) and host_name (readable), sort_order. Up to 20 per card.
 - `filter_groups`, `filters`, `card_filters`: tags, unchanged.
 - `user_filter_access`: unchanged.
 - `audit_log`: unchanged (login, open_link, open_link_denied, admin_*).
