@@ -275,6 +275,7 @@ it from the Supabase runtime.
   - Derived tokens: elevated surface (navy lightened), text `#ffffff`, muted text, danger.
   - Contrast: green on navy about 7.8:1 (passes AA and AAA for text). White on green is only about 2.4:1, so buttons use navy text on green (about 7.8:1), unlike the public site.
 - Fonts: **Chakra Petch** (headings; angular esports-style caps) + **Exo 2** (body and UI). Chosen for a gaming look at the user's request. Both SIL Open Font License, self-hosted through `next/font`. Not RohTre's Space Grotesk.
+- **HUD theme (gaming look, applies to every page):** sharp corners (Tailwind radius scale overridden), faint grid backdrop, angled-corner green buttons with a light sweep, `.ng-panel` surfaces with green corner brackets, `.ng-tag` labels, `.ng-btn-ghost`, reticle around the emblem, ticker band. Shared pieces: `src/components/hud.tsx` and the "HUD parts" block in `globals.css`. New pages must use these.
 - Logo: the official NealGuides emblem + wordmark from nealguides.com in `/public/brand` (black on transparent; shown white on the dark theme with a CSS filter, file unchanged). Favicons from the same site.
 - Motion: fade, slide, small scale on focus, hover preview playback. No 3D buttons, no 3D card tilt. Everything respects `prefers-reduced-motion`.
 - Layout: top header bar with logo + "Neal Guides", left sidebar (full / collapsed / drawer on mobile), content area. Own visual design.

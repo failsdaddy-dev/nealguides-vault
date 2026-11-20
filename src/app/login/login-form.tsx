@@ -14,7 +14,8 @@ import { safeNext } from "@/lib/url-state";
 
 const FIELD =
   "vh-field flex h-12 items-center gap-3 rounded-xl border border-[var(--search-border)] bg-[var(--search-bg)] px-4 font-normal";
-const INPUT = "h-full min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-fg-2/60";
+const INPUT =
+  "h-full min-w-0 flex-1 bg-transparent font-sans text-base normal-case tracking-normal text-fg outline-none placeholder:text-fg-2/60";
 
 export function LoginForm() {
   const router = useRouter();
@@ -86,13 +87,13 @@ export function LoginForm() {
   return (
     <form onSubmit={signIn} className="flex flex-col gap-5">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand">Editors only</p>
-        <h1 className="mt-2 text-4xl font-bold uppercase tracking-[0.01em]">Sign in</h1>
+        <p className="ng-tag">Editors only</p>
+        <h1 className="mt-3 text-4xl font-bold uppercase tracking-[0.01em]">Sign in</h1>
         <p className="mt-1.5 text-sm text-fg-2">
           {signedOut ? "You’ve been signed out on this browser." : "Use the login the admin gave you."}
         </p>
       </div>
-      <label className="flex flex-col gap-1.5 text-sm font-medium">
+      <label className="flex flex-col gap-1.5 font-display text-xs font-semibold uppercase tracking-[0.18em] text-fg-2">
         Email
         <span className={FIELD}>
           <MailIcon size={18} className="shrink-0 text-fg-2" />
@@ -107,7 +108,7 @@ export function LoginForm() {
           />
         </span>
       </label>
-      <label className="flex flex-col gap-1.5 text-sm font-medium">
+      <label className="flex flex-col gap-1.5 font-display text-xs font-semibold uppercase tracking-[0.18em] text-fg-2">
         Password
         <span className={FIELD}>
           <LockIcon size={18} className="shrink-0 text-fg-2" />
@@ -141,7 +142,7 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={busy}
-        className="vh-press inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-brand font-semibold text-brand-fg disabled:opacity-60"
+        className="vh-press inline-flex h-12 items-center justify-center gap-2 bg-brand text-brand-fg disabled:opacity-60"
       >
         {busy ? "Checking…" : "Sign in"}
         {!busy && <ArrowRightIcon size={18} strokeWidth={2.2} />}

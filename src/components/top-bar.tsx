@@ -15,7 +15,7 @@ export function Wordmark({ size = 34 }: { size?: number }) {
     <span className="flex select-none items-center gap-2.5">
       {/* eslint-disable-next-line @next/next/no-img-element -- small static brand file */}
       <img src={LOGO_SRC} alt="" width={size} height={size} className="ng-logo-light shrink-0" />
-      <span className="font-display text-[21px] font-semibold uppercase leading-none tracking-[0.04em]">{APP_NAME}</span>
+      <span className="font-display text-[21px] font-bold uppercase leading-none tracking-[0.06em]">{APP_NAME}</span>
     </span>
   );
 }
@@ -127,7 +127,7 @@ export function TopBar() {
   }
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between gap-4 border-b border-line bg-bg/90 px-4 backdrop-blur max-sm:px-2">
+    <header className="ng-hud-line fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between gap-4 border-b border-line bg-bg/90 px-4 backdrop-blur max-sm:px-2">
       <div className="flex shrink-0 items-center gap-2">
         <IconButton label="Menu" onClick={toggleGuide}>
           <MenuIcon />

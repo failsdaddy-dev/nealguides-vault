@@ -70,7 +70,7 @@ function AdminLink({ mini, onNavigate }: { mini: boolean; onNavigate?: () => voi
 function FullGuideBody({ onNavigate, inline }: { onNavigate?: () => void; inline?: boolean }) {
   return (
     <div className="flex flex-col px-3 pb-6 pt-4">
-      <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-fg-2">Vault</p>
+      <p className="ng-tag px-3 pb-3">Vault</p>
       <SectionLinks mini={false} onNavigate={onNavigate} />
       <hr className="my-3 border-line" />
       {inline ? (

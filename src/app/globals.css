@@ -45,8 +45,9 @@
   --header-h: 60px;
   --guide-full: 248px;
   --guide-mini: 76px;
-  --radius-chip: 8px;
-  --radius-thumb: 12px;
+  --radius-chip: 4px;
+  --radius-thumb: 6px;
+  --cut: 10px;                   /* chamfer size on HUD buttons */
 
   --dur-1: 150ms;
   --dur-2: 200ms;
@@ -82,6 +83,18 @@
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 }
 
+/* HUD theme: sharper corners everywhere. Tailwind's rounded-* utilities
+   read these, so every page picks up the gaming look from one place.
+   rounded-full (avatars, round icon buttons, dots) is unchanged. */
+@theme {
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-xl: 5px;
+  --radius-2xl: 6px;
+  --radius-3xl: 8px;
+}
+
 /* ------------------------------------------------------------------- base */
 html,
 body {
@@ -89,6 +102,13 @@ body {
   color: var(--fg);
 }
 body {
+  /* HUD backdrop on every page: faint grid + a green glow top right. */
+  background:
+    radial-gradient(60rem 32rem at 88% -12%, color-mix(in srgb, var(--green) 8%, transparent), transparent 70%),
+    linear-gradient(to right, rgba(255, 255, 255, 0.022) 1px, transparent 1px) 0 0 / 56px 56px,
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.022) 1px, transparent 1px) 0 0 / 56px 56px,
+    var(--bg);
+  background-attachment: fixed;
   font-family: var(--font-body), "Exo 2", "Segoe UI", Arial, sans-serif;
   font-size: 14px;
   line-height: 1.45;
@@ -134,14 +154,14 @@ select:focus-visible {
 .vh-menu {
   padding: 6px;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 6px;
   background: var(--menu);
   color: var(--fg);
   box-shadow: 0 18px 48px -16px rgba(0, 0, 0, 0.6);
 }
 .vh-menu-item {
   padding: 9px 12px;
-  border-radius: 10px;
+  border-radius: 4px;
   transition: background-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
 }
 .vh-menu-item:hover,
@@ -177,7 +197,7 @@ select {
     margin-top: 6px;
     padding: 6px;
     border: 1px solid var(--line);
-    border-radius: 12px;
+    border-radius: 6px;
     background: var(--menu);
     color: var(--fg);
     box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.55);
@@ -204,7 +224,7 @@ select {
     align-items: center;
     gap: 8px;
     padding: 8px 12px;
-    border-radius: 8px;
+    border-radius: 3px;
     font-size: 14px;
     cursor: pointer;
     transition: background-color var(--dur-1) var(--ease);
@@ -325,6 +345,69 @@ select {
   opacity: 1;
 }
 
+/* HUD primary buttons: every green action button in the app gets angled
+   corners and a light sweep on hover. clip-path also clips the focus
+   outline, so focus is shown as an inset ring instead. */
+.vh-press.bg-brand,
+.ng-cut {
+  border-radius: 0;
+  clip-path: polygon(
+    var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)),
+    calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut)
+  );
+}
+.vh-press.bg-brand {
+  font-family: var(--font-heading), "Chakra Petch", sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background-image: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, 0.38) 50%, transparent 65%);
+  background-size: 260% 100%;
+  background-position: 130% 0;
+  background-repeat: no-repeat;
+  transition:
+    transform var(--dur-1) var(--ease),
+    background-color var(--dur-1) var(--ease),
+    background-position 600ms var(--ease),
+    opacity var(--dur-1) var(--ease);
+}
+.vh-press.bg-brand:not(:disabled):hover { background-position: -30% 0; }
+.vh-press.bg-brand:focus-visible,
+.ng-cut:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--navy), inset 0 0 0 4px var(--fg);
+}
+
+/* Secondary HUD button: outlined, angled, fills green on hover. */
+.ng-btn-ghost {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 0;
+  background:
+    linear-gradient(var(--bg), var(--bg)) padding-box,
+    linear-gradient(135deg, var(--green), color-mix(in srgb, var(--green) 25%, var(--line))) border-box;
+  border: 1px solid transparent;
+  clip-path: polygon(
+    var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)),
+    calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut)
+  );
+  font-family: var(--font-heading), "Chakra Petch", sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: color var(--dur-2) var(--ease), background var(--dur-2) var(--ease);
+}
+.ng-btn-ghost:hover {
+  color: var(--green);
+  background:
+    linear-gradient(color-mix(in srgb, var(--green) 10%, var(--bg)), color-mix(in srgb, var(--green) 10%, var(--bg))) padding-box,
+    linear-gradient(135deg, var(--green), var(--green)) border-box;
+}
+.ng-btn-ghost:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--fg); }
+
 /* Sidebar items: fade in in sequence; a green bar marks the current page. */
 @keyframes vh-nav-in {
   from { opacity: 0; transform: translateX(-6px); }
@@ -345,20 +428,23 @@ select {
   top: 24%;
   bottom: 24%;
   width: 3px;
-  border-radius: 3px;
+  border-radius: 0;
   background: var(--brand);
   transform: scaleY(0);
   transition: transform var(--dur-3) var(--ease);
 }
-.vh-nav[aria-current="page"]::before { transform: scaleY(1); }
-.vh-nav[aria-current="page"] > :first-child { color: var(--brand); }
+.vh-nav[aria-current="page"]::before { transform: scaleY(1); box-shadow: 0 0 10px var(--green); }
+.vh-nav[aria-current="page"] {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--green) 16%, transparent), transparent 85%);
+}
+.vh-nav[aria-current="page"] > :first-child { color: var(--brand); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--green) 60%, transparent)); }
 .vh-nav:focus-visible { outline-offset: -2px; }
 
 /* Panel (was RohTre's 3D offset block): now a flat bordered surface.
    .on-hover shows the border only on hover. */
 .vh-offset {
   position: relative;
-  border-radius: 16px;
+  border-radius: 6px;
   background: var(--offset-surface, var(--bg-elev));
   border: 1px solid var(--line);
   transition: border-color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease);
@@ -373,6 +459,43 @@ select {
     border-color: var(--line);
   }
 }
+/* HUD corner brackets on panels (top-left and bottom-right). */
+.vh-offset:not(.on-hover)::after,
+.vh-offset.on-hover:hover::after,
+.ng-panel::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  --c: color-mix(in srgb, var(--green) 55%, transparent);
+  background:
+    linear-gradient(var(--c), var(--c)) top left / 16px 2px,
+    linear-gradient(var(--c), var(--c)) top left / 2px 16px,
+    linear-gradient(var(--c), var(--c)) bottom right / 16px 2px,
+    linear-gradient(var(--c), var(--c)) bottom right / 2px 16px;
+  background-repeat: no-repeat;
+  transition: opacity var(--dur-2) var(--ease);
+}
+
+/* HUD panel: the standard surface for cards, tiles and forms. */
+.ng-panel {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-elev-2) 75%, transparent), var(--bg-elev));
+  transition:
+    border-color var(--dur-2) var(--ease),
+    box-shadow var(--dur-2) var(--ease),
+    transform var(--dur-2) var(--ease);
+}
+.ng-panel.is-interactive:hover,
+.ng-panel.is-interactive:focus-within {
+  border-color: color-mix(in srgb, var(--green) 55%, var(--line));
+  box-shadow: 0 14px 36px -18px color-mix(in srgb, var(--green) 45%, transparent);
+  transform: translateY(-2px);
+}
+.ng-panel.is-interactive:hover::after,
+.ng-panel.is-interactive:focus-within::after { --c: var(--green); }
 
 /* Library cards: a soft panel appears behind the card on hover/focus
    (no tilt, no lift). */
@@ -409,6 +532,177 @@ select {
   mask-image: radial-gradient(70% 70% at 50% 40%, black, transparent);
 }
 .vh-hero-in { animation: vh-route-in 500ms var(--ease-out) calc(var(--i, 0) * 80ms) backwards; }
+
+/* ------------------------------------------------------------ HUD parts
+   Shared gaming UI pieces. Use these on every new page so the whole app
+   keeps one look: .ng-tag labels, .ng-panel surfaces, .ng-cut / bg-brand
+   buttons, .ng-btn-ghost, .ng-reticle around the emblem, .ng-ticker. */
+
+/* Label: "— SECTION NAME" in green caps. */
+.ng-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-heading), "Chakra Petch", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+.ng-tag::before {
+  content: "";
+  width: 16px;
+  height: 2px;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+}
+.ng-tag.no-bar::before { display: none; }
+
+/* Live dot (pulsing). */
+.ng-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: var(--green);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--green) 60%, transparent);
+  animation: ng-pulse 2s ease-out infinite;
+}
+@keyframes ng-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--green) 60%, transparent); }
+  70%, 100% { box-shadow: 0 0 0 8px transparent; }
+}
+
+/* Headline glow. */
+.ng-glow { text-shadow: 0 0 28px color-mix(in srgb, var(--green) 45%, transparent); }
+
+/* Header underline: a thin green line fading out to the sides. */
+.ng-hud-line { position: relative; }
+.ng-hud-line::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--green) 70%, transparent) 50%, transparent);
+  pointer-events: none;
+}
+
+/* Reticle frame around the emblem: rings, a rotating arc, crosshair ticks. */
+.ng-reticle {
+  position: relative;
+  width: var(--size, 320px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+.ng-reticle > span {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+}
+.ng-reticle__glow {
+  inset: 12%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--green) 22%, transparent), transparent);
+  filter: blur(8px);
+}
+.ng-reticle__ring { inset: 0; border: 1px solid var(--line); }
+.ng-reticle__arc {
+  inset: 5%;
+  background: conic-gradient(
+    var(--green) 0 70deg, transparent 70deg 180deg,
+    color-mix(in srgb, var(--green) 55%, transparent) 180deg 215deg, transparent 215deg
+  );
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+  animation: ng-spin 12s linear infinite;
+}
+.ng-reticle__dash {
+  inset: 15%;
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  animation: ng-spin 40s linear infinite reverse;
+}
+.ng-reticle__ticks {
+  inset: -4%;
+  border-radius: 0 !important;
+  background:
+    linear-gradient(var(--green), var(--green)) top center / 2px 16px,
+    linear-gradient(var(--green), var(--green)) bottom center / 2px 16px,
+    linear-gradient(var(--green), var(--green)) left center / 16px 2px,
+    linear-gradient(var(--green), var(--green)) right center / 16px 2px;
+  background-repeat: no-repeat;
+}
+.ng-reticle img {
+  position: relative;
+  width: 58%;
+  height: auto;
+  filter: invert(1) drop-shadow(0 0 22px rgba(37, 192, 95, 0.25));
+}
+@keyframes ng-spin { to { transform: rotate(360deg); } }
+
+/* Scrolling ticker band. */
+.ng-ticker {
+  overflow: hidden;
+  background: var(--green);
+  color: var(--navy);
+  border-block: 1px solid var(--green-press);
+}
+.ng-ticker__track {
+  display: flex;
+  width: max-content;
+  animation: ng-marquee 32s linear infinite;
+}
+.ng-ticker__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 28px;
+  padding: 12px 14px;
+  font-family: var(--font-heading), "Chakra Petch", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.ng-ticker__item::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: var(--navy);
+  transform: rotate(45deg);
+}
+@keyframes ng-marquee { to { transform: translateX(-50%); } }
+
+/* Big faint index number on tiles ("01"). */
+.ng-index {
+  font-family: var(--font-heading), "Chakra Petch", sans-serif;
+  font-weight: 700;
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1px color-mix(in srgb, var(--fg) 18%, transparent);
+}
+
+/* Readout strip (label over value) used in the hero. */
+.ng-readout dt {
+  font-family: var(--font-heading), "Chakra Petch", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+.ng-readout dd {
+  margin-top: 4px;
+  font-family: var(--font-heading), "Chakra Petch", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Thin scrollbars in the theme colours. */
+* { scrollbar-width: thin; scrollbar-color: var(--navy-2) transparent; }
 
 /* Browser autofill: keep the field in our colours. */
 input:-webkit-autofill,
@@ -638,7 +932,7 @@ input:-webkit-autofill:focus {
   z-index: 1;
   padding: 8px 14px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 0;
   background: color-mix(in srgb, var(--bg) 70%, transparent);
   color: var(--fg-2);
   font-size: 12px;
@@ -721,4 +1015,8 @@ body:has(.ng-intro:not(.ng-intro--exit)) .vh-hero-in {
   }
   .vh-skeleton::after { display: none; }
   .vh-hero-in { animation: none; }
+  .ng-reticle__arc,
+  .ng-reticle__dash,
+  .ng-ticker__track,
+  .ng-dot { animation: none !important; }
 }
