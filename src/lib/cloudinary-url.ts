@@ -5,16 +5,17 @@
 // verified: https://cloudinary.com/documentation/video_manipulation_and_delivery
 // verified: https://cloudinary.com/documentation/audio_transformations
 
-import type { AudioPreview, PreviewClip } from "./types";
+import type { AudioPreview, PreviewClip, PreviewImage } from "./types";
 
-const UPLOAD = "/video/upload/";
+const UPLOAD = /\/(video|image)\/upload\//;
 
 /** Inserts `transformation` after /upload/ and optionally swaps the extension. */
 export function cloudinaryVariant(url: string, transformation: string, ext?: string): string {
-  const i = url.indexOf(UPLOAD);
-  if (i < 0) return url;
-  const head = url.slice(0, i + UPLOAD.length);
-  let rest = url.slice(i + UPLOAD.length);
+  const m = UPLOAD.exec(url);
+  if (!m) return url;
+  const end = m.index + m[0].length;
+  const head = url.slice(0, end);
+  let rest = url.slice(end);
   if (ext) rest = rest.replace(/\.[A-Za-z0-9]+$/, `.${ext}`);
   return `${head}${transformation}/${rest}`;
 }
@@ -25,6 +26,10 @@ export const clipLoopUrl = (url: string) => cloudinaryVariant(url, "c_limit,w_48
 export const clipLargeUrl = (url: string) => cloudinaryVariant(url, "c_limit,w_1280,q_auto,ac_none", "mp4");
 /** Still frame from the start of the clip, used as the card's thumbnail. */
 export const clipPosterUrl = (url: string) => cloudinaryVariant(url, "so_0,c_limit,w_480,q_auto", "jpg");
+/** Image cards: card-size still, automatic format and quality. */
+export const imageCardUrl = (url: string) => cloudinaryVariant(url, "c_limit,w_640,q_auto,f_auto");
+/** Image cards: large still for the card page. */
+export const imageLargeUrl = (url: string) => cloudinaryVariant(url, "c_limit,w_1600,q_auto,f_auto");
 
 function num(v: unknown): number | null {
   const n = typeof v === "string" ? Number(v) : v;
@@ -59,4 +64,12 @@ export function parseAudioPreview(v: unknown): AudioPreview | null {
   const { o, ...rest } = b;
   const peaks = Array.isArray(o.peaks) ? o.peaks.map(Number).filter((n) => Number.isFinite(n)) : null;
   return { ...rest, peaks };
+}
+
+export function parsePreviewImage(v: unknown): PreviewImage | null {
+  const b = base(v);
+  if (!b || !b.url.includes("/image/upload/")) return null;
+  const { o, duration: _d, ...rest } = b;
+  void _d;
+  return { ...rest, width: num(o.width) ?? undefined, height: num(o.height) ?? undefined };
 }

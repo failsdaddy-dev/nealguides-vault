@@ -97,6 +97,8 @@ export type Database = {
           card_id: string
           created_at: string
           id: string
+          host: string
+          host_name: string
           kind: Database["public"]["Enums"]["link_kind"]
           label: string
           sort_order: number
@@ -105,6 +107,8 @@ export type Database = {
         Insert: {
           card_id: string
           created_at?: string
+          host?: string
+          host_name?: string
           id?: string
           kind: Database["public"]["Enums"]["link_kind"]
           label: string
@@ -114,6 +118,8 @@ export type Database = {
         Update: {
           card_id?: string
           created_at?: string
+          host?: string
+          host_name?: string
           id?: string
           kind?: Database["public"]["Enums"]["link_kind"]
           label?: string
@@ -140,9 +146,11 @@ export type Database = {
           has_downloads: boolean
           has_project_files: boolean
           id: string
+          link_hosts: string[]
           loom_url: string | null
           media_type: Database["public"]["Enums"]["media_type"]
           preview_clip: Json | null
+          preview_image: Json | null
           preview_end: number | null
           preview_start: number
           published_at: string | null
@@ -152,6 +160,7 @@ export type Database = {
           sort_order: number
           source_url: string | null
           status: Database["public"]["Enums"]["card_status"]
+          subsection_id: string | null
           title: string
           updated_at: string
           youtube_id: string | null
@@ -165,9 +174,11 @@ export type Database = {
           has_downloads?: boolean
           has_project_files?: boolean
           id?: string
+          link_hosts?: string[]
           loom_url?: string | null
           media_type?: Database["public"]["Enums"]["media_type"]
           preview_clip?: Json | null
+          preview_image?: Json | null
           preview_end?: number | null
           preview_start?: number
           published_at?: string | null
@@ -177,6 +188,7 @@ export type Database = {
           sort_order?: number
           source_url?: string | null
           status?: Database["public"]["Enums"]["card_status"]
+          subsection_id?: string | null
           title: string
           updated_at?: string
           youtube_id?: string | null
@@ -190,9 +202,11 @@ export type Database = {
           has_downloads?: boolean
           has_project_files?: boolean
           id?: string
+          link_hosts?: string[]
           loom_url?: string | null
           media_type?: Database["public"]["Enums"]["media_type"]
           preview_clip?: Json | null
+          preview_image?: Json | null
           preview_end?: number | null
           preview_start?: number
           published_at?: string | null
@@ -202,6 +216,7 @@ export type Database = {
           sort_order?: number
           source_url?: string | null
           status?: Database["public"]["Enums"]["card_status"]
+          subsection_id?: string | null
           title?: string
           updated_at?: string
           youtube_id?: string | null
@@ -213,6 +228,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sections"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cards_subsection_id_section_id_fkey"
+            columns: ["subsection_id", "section_id"]
+            isOneToOne: false
+            referencedRelation: "subsections"
+            referencedColumns: ["id", "section_id"]
           },
         ]
       }
@@ -287,7 +309,6 @@ export type Database = {
           expires_at: string | null
           id: string
           is_active: boolean
-          must_change_password: boolean
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
         }
@@ -299,7 +320,6 @@ export type Database = {
           expires_at?: string | null
           id: string
           is_active?: boolean
-          must_change_password?: boolean
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
@@ -311,7 +331,6 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean
-          must_change_password?: boolean
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
@@ -346,6 +365,44 @@ export type Database = {
           sort_order?: number
         }
         Relationships: []
+      }
+      subsections: {
+        Row: {
+          created_at: string
+          id: string
+          is_visible: boolean
+          name: string
+          section_id: string
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          name: string
+          section_id: string
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          name?: string
+          section_id?: string
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subsections_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "sections"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_filter_access: {
         Row: {
@@ -385,6 +442,7 @@ export type Database = {
       admin_card_links: {
         Args: { p_card: string }
         Returns: {
+          host: string
           id: string
           kind: Database["public"]["Enums"]["link_kind"]
           label: string
@@ -427,6 +485,7 @@ export type Database = {
           p_q?: string
           p_section?: string
           p_sort?: string
+          p_sub?: string
         }
         Returns: {
           audio_preview: Json
@@ -435,10 +494,12 @@ export type Database = {
           has_downloads: boolean
           has_project_files: boolean
           id: string
+          link_hosts: string[]
           loom_url: string
           media_type: Database["public"]["Enums"]["media_type"]
           preview_clip: Json
           preview_end: number
+          preview_image: Json
           preview_start: number
           section_slug: string
           slug: string
@@ -446,18 +507,18 @@ export type Database = {
           sort_ts: string
           source_url: string
           status: Database["public"]["Enums"]["card_status"]
+          subsection_slug: string
           title: string
           youtube_id: string
         }[]
       }
       filter_counts: {
-        Args: { p_section?: string }
+        Args: { p_section?: string; p_sub?: string }
         Returns: {
           card_count: number
           filter_id: string
         }[]
       }
-      mark_password_changed: { Args: never; Returns: undefined }
       release_asset_link: {
         Args: { p_link: string; p_user: string }
         Returns: string
@@ -466,7 +527,7 @@ export type Database = {
     Enums: {
       card_status: "draft" | "published"
       link_kind: "project" | "download"
-      media_type: "youtube" | "audio"
+      media_type: "youtube" | "audio" | "image"
       section_kind: "gameplay" | "effect" | "music" | "background"
       user_role: "admin" | "editor"
     }
@@ -598,7 +659,7 @@ export const Constants = {
     Enums: {
       card_status: ["draft", "published"],
       link_kind: ["project", "download"],
-      media_type: ["youtube", "audio"],
+      media_type: ["youtube", "audio", "image"],
       section_kind: ["gameplay", "effect", "music", "background"],
       user_role: ["admin", "editor"],
     },

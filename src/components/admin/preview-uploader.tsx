@@ -1,18 +1,21 @@
 "use client";
 
-// Upload field for preview files on Cloudinary (the real files stay on Mega):
+// Upload field for preview files on Cloudinary (the real files stay on their
+// own hosts: Google Drive, Mega, ...):
 //   video -> silent card clip, MP4 / WebM / MOV, up to 10 s and 2 MB
 //   audio -> music preview, MP3, up to 30 s and 1 MB
+//   image -> still preview, JPG / PNG / WebP, up to 1 MB (bigger or very
+//            large images are shrunk to WebP in the browser first)
 // The browser checks type, size and length first (and, for audio, reads the
 // waveform), then uploads straight to Cloudinary with a signature from the
 // admin-only cloudinary-sign-upload function. Nothing passes through our servers.
 
 import { useEffect, useRef, useState } from "react";
 import { signPreviewUpload, type PreviewKind, type UploadTicket } from "@/lib/admin-api";
-import { clipLoopUrl } from "@/lib/cloudinary-url";
+import { clipLoopUrl, imageCardUrl } from "@/lib/cloudinary-url";
 import type { AudioPreview, PreviewClip } from "@/lib/types";
 import { formatTime, useAudio } from "../audio-player";
-import { CloseIcon, MusicIcon, PlayIcon, UploadIcon } from "../icons";
+import { CloseIcon, LayersIcon, MusicIcon, PlayIcon, UploadIcon } from "../icons";
 import { Waveform } from "../waveform";
 import { AUDIO_SOURCE_MAX_BYTES, SOURCE_MAX_BYTES } from "@/lib/make-preview";
 import { AudioPreviewMaker } from "./audio-preview-maker";
@@ -22,11 +25,41 @@ import { Button } from "./ui";
 export const PREVIEW_LIMITS = {
   video: { mb: 2, seconds: 10, accept: "video/*,.mp4,.m4v,.mov,.webm,.mkv", label: "MP4, WebM or MOV", re: /\.(mp4|webm|mov)$/i, mime: /^video\/(mp4|webm|quicktime)$/ },
   audio: { mb: 1, seconds: 30, accept: "audio/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.opus,.aif,.aiff", label: "MP3", re: /\.mp3$/i, mime: /^audio\/(mpeg|mp3)$/ },
+  image: { mb: 1, seconds: 0, accept: "image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp", label: "JPG, PNG or WebP", re: /\.(jpe?g|png|webp)$/i, mime: /^image\/(jpeg|png|webp)$/ },
 } as const;
+
+/** Longest side of an uploaded still; larger images are scaled down. */
+const IMAGE_MAX_SIDE = 2560;
+
+async function readImage(file: File): Promise<{ width: number; height: number }> {
+  const bmp = await createImageBitmap(file).catch(() => {
+    throw new Error("This browser can’t read that image. Use JPG, PNG or WebP.");
+  });
+  const out = { width: bmp.width, height: bmp.height };
+  bmp.close();
+  return out;
+}
+
+/** Fits an image under the size limit: scales the longest side to at most
+ *  IMAGE_MAX_SIDE and re-encodes as WebP, lowering quality until it fits. */
+async function shrinkImage(file: File, maxBytes: number): Promise<File> {
+  const bmp = await createImageBitmap(file);
+  const scale = Math.min(1, IMAGE_MAX_SIDE / Math.max(bmp.width, bmp.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bmp.width * scale);
+  canvas.height = Math.round(bmp.height * scale);
+  canvas.getContext("2d")!.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+  bmp.close();
+  for (const q of [0.9, 0.8, 0.7, 0.6, 0.5]) {
+    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/webp", q));
+    if (blob && blob.size <= maxBytes) return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".webp", { type: "image/webp" });
+  }
+  throw new Error("Couldn’t make that image small enough (1 MB). Try a smaller image.");
+}
 
 const PEAKS = 120;
 
-/** What the form holds; `saved` = already on the card. */
+/** What the form holds; `saved` = already on the card. Images use duration 0. */
 export type PreviewValue = ((PreviewClip & AudioPreview) & { saved: boolean; localUrl?: string }) | null;
 
 async function readAudio(file: File): Promise<{ duration: number; peaks: number[] }> {
@@ -126,6 +159,18 @@ export function PreviewUploader({
   const pick = async (file: File | undefined) => {
     if (!file) return;
     setError(null);
+    if (kind === "image") {
+      if (!lim.mime.test(file.type) && !lim.re.test(file.name)) return setError("Choose a JPG, PNG or WebP image.");
+      if (file.size > 50 * 1024 * 1024) return setError("That image is over 50 MB. Export a smaller one first.");
+      try {
+        const meta = await readImage(file);
+        const fits = file.size <= lim.mb * 1024 * 1024 && Math.max(meta.width, meta.height) <= IMAGE_MAX_SIDE;
+        return send(fits ? file : await shrinkImage(file, lim.mb * 1024 * 1024));
+      } catch (e) {
+        if (input.current) input.current.value = "";
+        return setError((e as Error).message);
+      }
+    }
     if (kind === "video") {
       if (!/^video\//.test(file.type) && !/\.(mp4|m4v|mov|webm|mkv|avi)$/i.test(file.name)) return setError("Choose a video file (MP4 or MOV).");
       if (file.size > SOURCE_MAX_BYTES) return setError("That video is over 1 GB, too big to process in the browser. Export a shorter part first.");
@@ -155,6 +200,26 @@ export function PreviewUploader({
   // Checks the final file and uploads it straight to Cloudinary.
   const send = async (file: File) => {
     try {
+      if (kind === "image") {
+        if (file.size > lim.mb * 1024 * 1024) return setError(`That file is ${(file.size / 1048576).toFixed(2)} MB. The limit is ${lim.mb} MB.`);
+        const dims = await readImage(file);
+        setProgress(0);
+        const ticket = await signPreviewUpload(kind);
+        const res = await upload(file, ticket, setProgress, xhr);
+        onChange({
+          url: String(res.secure_url),
+          public_id: String(res.public_id),
+          version: Number(res.version),
+          format: String(res.format ?? ""),
+          bytes: Number(res.bytes ?? file.size),
+          duration: 0,
+          width: Number(res.width ?? dims.width),
+          height: Number(res.height ?? dims.height),
+          saved: false,
+          localUrl: URL.createObjectURL(file),
+        });
+        return;
+      }
       const meta = kind === "audio" ? await readAudio(file) : await readVideo(file);
       if (meta.duration > lim.seconds + 0.5) {
         return setError(`That ${kind === "audio" ? "track" : "clip"} is ${formatTime(meta.duration)} long. The limit is ${lim.seconds} seconds; trim it first.`);
@@ -225,6 +290,14 @@ export function PreviewUploader({
         </div>
       ) : value ? (
         <div className="flex flex-col gap-3 rounded-xl border border-line p-3">
+          {kind === "image" && src && (
+            // eslint-disable-next-line @next/next/no-img-element -- Cloudinary preview or local blob
+            <img
+              src={value.localUrl ?? imageCardUrl(value.url)}
+              alt=""
+              className="aspect-video w-full max-w-[360px] rounded-lg bg-black object-cover"
+            />
+          )}
           {kind === "video" && src && (
             <video
               src={value.localUrl ?? clipLoopUrl(value.url)}
@@ -241,10 +314,20 @@ export function PreviewUploader({
                 <MusicIcon size={20} />
               </span>
             )}
+            {kind === "image" && (
+              <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-brand/12 text-brand">
+                <LayersIcon size={20} />
+              </span>
+            )}
             <div className="min-w-0 flex-1 text-sm">
-              <p className="font-medium">{kind === "audio" ? "Music preview" : "Card preview clip"}</p>
+              <p className="font-medium">{kind === "audio" ? "Music preview" : kind === "image" ? "Card preview image" : "Card preview clip"}</p>
               <p className="text-xs text-fg-2">
-                {formatTime(value.duration)} · {(value.bytes / 1048576).toFixed(2)} MB · {value.saved ? "Saved" : "Uploaded, not saved yet"}
+                {kind === "image"
+                  ? value.width && value.height
+                    ? `${value.width} × ${value.height}`
+                    : value.format.toUpperCase()
+                  : formatTime(value.duration)}{" "}
+                · {(value.bytes / 1048576).toFixed(2)} MB · {value.saved ? "Saved" : "Uploaded, not saved yet"}
               </p>
             </div>
             <Button variant="ghost" aria-label="Remove file" onClick={() => onChange(null)}>
@@ -268,11 +351,13 @@ export function PreviewUploader({
           className="vh-press flex flex-col items-center gap-2 rounded-xl border border-dashed border-line px-4 py-6 text-sm text-fg-2 hover:bg-hover"
         >
           <UploadIcon size={22} className="text-brand" />
-          <span className="font-medium text-fg">{kind === "audio" ? "Choose track" : "Choose video"}</span>
+          <span className="font-medium text-fg">{kind === "audio" ? "Choose track" : kind === "image" ? "Choose image" : "Choose video"}</span>
           <span className="text-xs">
             {kind === "audio"
               ? "Any size (MP3, WAV, M4A, FLAC, e.g. the full song). You pick 30 seconds; only that preview is uploaded."
-              : "Any size (MP4 or MOV, e.g. the full effect). Big files are cut to a small 10-second preview in your browser."}
+              : kind === "image"
+                ? "JPG, PNG or WebP. Images over 1 MB are shrunk to WebP in your browser before upload."
+                : "Any size (MP4 or MOV, e.g. the full effect). Big files are cut to a small 10-second preview in your browser."}
           </span>
         </button>
       )}

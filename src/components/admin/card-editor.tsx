@@ -1,9 +1,10 @@
 "use client";
 
-// Create / edit a card (R18): title, section, slug (auto, editable), filters,
-// media (video cards: a short preview clip on Cloudinary; audio cards: a
-// 30-second MP3 preview on Cloudinary), Loom
-// tutorial, labelled project-file and download links (Mega: the real files),
+// Create / edit a card: title, section and optional subsection, slug (auto,
+// editable), tags, media (video cards: a short preview clip on Cloudinary;
+// audio cards: a 30-second MP3 preview; image cards: a still), Loom
+// tutorial, labelled project-file and download links (the real files, on
+// any https host: Google Drive, Mega, Dropbox, ...; a host badge is shown),
 // source link, description, status.
 //
 // One form, one save, used in two places:
@@ -21,7 +22,11 @@ import {
   deletePreviewFile,
   getCard,
   getCardLinks,
+  HOST_LABEL,
+  linkHost,
+  linkProblem,
   loadTaxonomy,
+  MAX_LINKS,
   saveCard,
   slugify,
   type EditableLink,
@@ -29,8 +34,9 @@ import {
   type GroupRow,
   type LinkKind,
   type SectionRow,
+  type SubsectionRow,
 } from "@/lib/admin-api";
-import { parseAudioPreview, parsePreviewClip } from "@/lib/cloudinary-url";
+import { parseAudioPreview, parsePreviewClip, parsePreviewImage } from "@/lib/cloudinary-url";
 import type { Json } from "@/lib/database.types";
 import { loomEmbedUrl, loomShareUrl } from "@/lib/loom";
 import { CloseIcon } from "../icons";
@@ -42,7 +48,7 @@ import { AdminFrame, Button, ButtonLink, ErrorNote, Field, Input, Panel, Select,
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const SUGGESTED: Record<LinkKind, string[]> = {
   project: ["Premiere Pro", "After Effects", "DaVinci Resolve", "CapCut"],
-  download: ["Transparent .mov", ".mp4", "Audio (.wav)", "Font files (.otf)"],
+  download: ["1080p", "4K", "Shorts (9:16)", "Transparent .mov", "Pack (.zip)", "Audio (.wav)"],
 };
 
 /** What the drawer's caller needs to update the card in place. */
@@ -56,13 +62,15 @@ export interface SavedCard {
 interface FormState {
   title: string;
   sectionId: string;
+  subsectionId: string;
   slug: string;
   slugTouched: boolean;
   description: string;
-  mediaType: "youtube" | "audio";
+  mediaType: "youtube" | "audio" | "image";
   mediaTouched: boolean;
   clip: PreviewValue;
   audio: PreviewValue;
+  image: PreviewValue;
   loom: string;
   source: string;
   status: "draft" | "published";
@@ -73,6 +81,7 @@ interface FormState {
 const EMPTY: FormState = {
   title: "",
   sectionId: "",
+  subsectionId: "",
   slug: "",
   slugTouched: false,
   description: "",
@@ -80,6 +89,7 @@ const EMPTY: FormState = {
   mediaTouched: false,
   clip: null,
   audio: null,
+  image: null,
   loom: "",
   source: "",
   status: "draft",
@@ -95,6 +105,7 @@ function snapshot(f: FormState): string {
     mediaTouched: undefined,
     clip: f.clip?.public_id ?? null,
     audio: f.audio?.public_id ?? null,
+    image: f.image?.public_id ?? null,
     filterIds: [...f.filterIds].sort(),
   });
 }
@@ -118,8 +129,12 @@ function LinkList({
     <div className="flex flex-col gap-2">
       <p className="text-sm font-medium">{title}</p>
       <p className="-mt-1 text-xs text-fg-2">{hint}</p>
-      {mine.map(({ l, i }) => (
-        <div key={i} className="flex flex-wrap gap-2">
+      {mine.map(({ l, i }) => {
+        const problem = l.url.trim() ? linkProblem(l.url) : null;
+        const host = !problem && l.url.trim() ? linkHost(l.url) : null;
+        return (
+        <div key={i} className="flex flex-col gap-1">
+        <div className="flex flex-wrap gap-2">
           <Input
             value={l.label}
             onChange={(e) => update(i, { label: e.target.value })}
@@ -132,23 +147,41 @@ function LinkList({
           <Input
             value={l.url}
             onChange={(e) => update(i, { url: e.target.value })}
-            placeholder="https://mega.nz/…"
+            placeholder="https://drive.google.com/… or any https link"
             aria-label={`${title} link`}
+            aria-invalid={problem ? true : undefined}
             className="min-w-[220px] flex-1"
             type="url"
+            maxLength={2000}
           />
           <Button variant="ghost" aria-label="Remove link" onClick={() => onChange(links.filter((_, j) => j !== i))}>
             <CloseIcon size={16} />
           </Button>
         </div>
-      ))}
+        {problem ? (
+          <p className="text-xs text-[var(--danger)]">{problem}</p>
+        ) : host ? (
+          <p className="ng-tag no-bar text-[10px] text-fg-2">
+            Host: <span className="text-brand">{HOST_LABEL[host.key]}</span>
+            {host.key === "other" && host.name ? ` (${host.name})` : ""}
+          </p>
+        ) : null}
+        </div>
+        );
+      })}
       <datalist id={`suggest-${kind}`}>
         {SUGGESTED[kind].map((s) => (
           <option key={s} value={s} />
         ))}
       </datalist>
       <div>
-        <Button onClick={() => onChange([...links, { kind, label: mine.length ? "" : SUGGESTED[kind][0], url: "" }])}>+ Add link</Button>
+        <Button
+          disabled={links.length >= MAX_LINKS}
+          onClick={() => onChange([...links, { kind, label: mine.length ? "" : SUGGESTED[kind][0], url: "" }])}
+        >
+          + Add link
+        </Button>
+        {links.length >= MAX_LINKS && <span className="ml-2 text-xs text-fg-2">{MAX_LINKS} links per card at most.</span>}
       </div>
     </div>
   );
@@ -179,7 +212,12 @@ export function CardEditor({
   const drawer = variant === "drawer";
   const router = useRouter();
   const toast = useToast();
-  const [tax, setTax] = useState<{ sections: SectionRow[]; groups: GroupRow[]; filters: FilterRow[] } | null>(null);
+  const [tax, setTax] = useState<{
+    sections: SectionRow[];
+    subsections: SubsectionRow[];
+    groups: GroupRow[];
+    filters: FilterRow[];
+  } | null>(null);
   const [f, setF] = useState<FormState>(EMPTY);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -213,11 +251,13 @@ export function CardEditor({
         if (!card) return setMissing(true);
         const clip = parsePreviewClip(card.preview_clip);
         const audio = parseAudioPreview(card.audio_preview);
+        const image = parsePreviewImage(card.preview_image);
         savedIds.current = new Set();
-        for (const x of [clip, audio]) if (x) savedIds.current.add(x.public_id);
+        for (const x of [clip, audio, image]) if (x) savedIds.current.add(x.public_id);
         const next: FormState = {
           title: card.title,
           sectionId: card.section_id,
+          subsectionId: card.subsection_id ?? "",
           slug: card.slug,
           slugTouched: true,
           description: card.description,
@@ -225,6 +265,7 @@ export function CardEditor({
           mediaTouched: true,
           clip: clip ? { ...clip, saved: true } : null,
           audio: audio ? { ...audio, saved: true } : null,
+          image: image ? { ...image, duration: 0, peaks: null, saved: true } : null,
           loom: card.loom_url ?? "",
           source: card.source_url ?? "",
           status: card.status,
@@ -255,7 +296,7 @@ export function CardEditor({
     };
   }, []);
 
-  const setPreview = (key: "clip" | "audio", next: PreviewValue) => {
+  const setPreview = (key: "clip" | "audio" | "image", next: PreviewValue) => {
     setF((s) => {
       const prev = s[key];
       if (prev && !prev.saved && prev.public_id !== next?.public_id) {
@@ -269,6 +310,8 @@ export function CardEditor({
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setF((s) => ({ ...s, [k]: v }));
   const section = tax?.sections.find((s) => s.id === f.sectionId);
+  const sectionSubs = tax?.subsections.filter((x) => x.section_id === f.sectionId) ?? [];
+  const subsection = sectionSubs.find((x) => x.id === f.subsectionId);
 
   const problems = useMemo(() => {
     const p: string[] = [];
@@ -277,9 +320,11 @@ export function CardEditor({
     if (!SLUG.test(f.slug)) p.push("The link name may only use lowercase letters, numbers and dashes.");
     if (f.loom.trim() && !loomEmbedUrl(f.loom)) p.push("The tutorial must be a loom.com share link.");
     if (f.source.trim() && !/^https:\/\//.test(f.source.trim())) p.push("The source link must start with https://");
+    if (f.links.length > MAX_LINKS) p.push(`A card can have at most ${MAX_LINKS} links.`);
     for (const l of f.links) {
       if (!l.label.trim()) p.push("Every file link needs a label.");
-      if (!/^https:\/\//.test(l.url.trim())) p.push(`“${l.label || "A link"}” must start with https://`);
+      const lp = linkProblem(l.url);
+      if (lp) p.push(`“${l.label || "A link"}”: ${lp}`);
     }
     return [...new Set(p)];
   }, [f]);
@@ -294,6 +339,7 @@ export function CardEditor({
         id ?? null,
         {
           section_id: f.sectionId,
+          subsection_id: f.subsectionId || null,
           slug: f.slug,
           title: f.title.trim(),
           description: f.description.trim(),
@@ -301,6 +347,7 @@ export function CardEditor({
           // Only the preview that matches the media type stays on the card.
           preview_clip: f.mediaType === "youtube" ? stored(f.clip) : null,
           audio_preview: f.mediaType === "audio" ? stored(f.audio) : null,
+          preview_image: f.mediaType === "image" ? stored(f.image) : null,
           loom_url: f.loom.trim() || null,
           source_url: f.source.trim() || null,
           status: f.status,
@@ -311,7 +358,7 @@ export function CardEditor({
         drawer && !overwrite ? (loadedAt ?? undefined) : undefined,
       );
       // The new files are on the card now; old ones it no longer uses go.
-      const current = f.mediaType === "youtube" ? f.clip : f.audio;
+      const current = f.mediaType === "youtube" ? f.clip : f.mediaType === "image" ? f.image : f.audio;
       const kept = new Set(current ? [current.public_id] : []);
       for (const pid of kept) unsaved.current.delete(pid);
       for (const pid of savedIds.current) if (!kept.has(pid)) void deletePreviewFile(pid).catch(() => {});
@@ -403,7 +450,7 @@ export function CardEditor({
               value={f.title}
               required
               maxLength={200}
-              placeholder="Cartoon question mark pop"
+              placeholder="e.g. Bicycle kick, FC 26"
               onChange={(e) => setF((s) => ({ ...s, title: e.target.value, slug: s.slugTouched ? s.slug : slugify(e.target.value) }))}
             />
           </Field>
@@ -414,7 +461,12 @@ export function CardEditor({
                 const id = e.target.value;
                 const kind = tax?.sections.find((x) => x.id === id)?.kind;
                 // Music defaults to audio, everything else to video, until the admin picks.
-                setF((s) => ({ ...s, sectionId: id, mediaType: s.mediaTouched ? s.mediaType : kind === "music" ? "audio" : "youtube" }));
+                setF((s) => ({
+                  ...s,
+                  sectionId: id,
+                  subsectionId: "",
+                  mediaType: s.mediaTouched ? s.mediaType : kind === "music" ? "audio" : "youtube",
+                }));
               }}
             >
               {tax?.sections.map((s) => (
@@ -424,7 +476,21 @@ export function CardEditor({
               ))}
             </Select>
           </Field>
-          <Field label="Link name" hint={section ? `Shareable link: /${section.slug}/${f.slug || "…"}` : undefined}>
+          <Field label="Subsection" hint={sectionSubs.length ? "Optional. Leave on the main list or pick one." : "This section has no subsections."}>
+            <Select value={f.subsectionId} disabled={!sectionSubs.length} onChange={(e) => set("subsectionId", e.target.value)}>
+              <option value="">{section ? `${section.name} (main list)` : "Main list"}</option>
+              {sectionSubs.map((x) => (
+                <option key={x.id} value={x.id}>
+                  {x.name}
+                  {x.is_visible ? "" : " (hidden)"}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field
+            label="Link name"
+            hint={section ? `Shareable link: /${section.slug}/${f.slug || "…"}${subsection ? ` (in ${subsection.name})` : ""}` : undefined}
+          >
             <Input value={f.slug} onChange={(e) => setF((s) => ({ ...s, slug: slugify(e.target.value), slugTouched: true }))} />
           </Field>
           <Field label="How to use (description)" className="sm:col-span-2">
@@ -435,7 +501,7 @@ export function CardEditor({
         <Panel className="flex flex-col gap-3">
           <p className="font-medium">Media</p>
           <div className="flex gap-2" role="radiogroup" aria-label="Media type">
-            {(["youtube", "audio"] as const).map((m) => (
+            {(["youtube", "image", "audio"] as const).map((m) => (
               <button
                 key={m}
                 type="button"
@@ -444,14 +510,16 @@ export function CardEditor({
                 onClick={() => setF((s) => ({ ...s, mediaType: m, mediaTouched: true }))}
                 className={`vh-press h-8 rounded-lg px-3 text-sm font-medium ${f.mediaType === m ? "bg-chip-on-bg text-chip-on-fg" : "bg-chip hover:bg-chip-hover"}`}
               >
-                {m === "youtube" ? "Video (clip)" : "Audio (MP3)"}
+                {m === "youtube" ? "Video (clip)" : m === "image" ? "Image (still)" : "Audio (MP3)"}
               </button>
             ))}
           </div>
           <p className="text-xs text-fg-2">
             {f.mediaType === "youtube"
               ? "The card loops a short silent preview clip; clicking it shows the clip bigger with the card’s buttons."
-              : "Editors hear a 30-second preview in the site’s player. The full track goes under Downloads (Mega)."}
+              : f.mediaType === "image"
+                ? "The card shows a still image, e.g. a background or thumbnail. The full file goes under Downloads."
+                : "Editors hear a 30-second preview in the site’s player. The full track goes under Downloads."}
           </p>
         </Panel>
 
@@ -466,11 +534,19 @@ export function CardEditor({
             </Panel>
 
           </>
+        ) : f.mediaType === "image" ? (
+          <Panel className="flex flex-col gap-3">
+            <p className="font-medium">Preview image</p>
+            <p className="-mt-1 text-xs text-fg-2">
+              A still shown on the card (JPG, PNG or WebP, up to 1 MB; bigger images are shrunk in your browser). The full-quality file goes under Downloads.
+            </p>
+            <PreviewUploader kind="image" value={f.image} onChange={(v) => setPreview("image", v)} title={f.title} />
+          </Panel>
         ) : (
           <Panel className="flex flex-col gap-3">
             <p className="font-medium">Music preview (MP3)</p>
             <p className="-mt-1 text-xs text-fg-2">
-              Choose the full track (any size); you pick the 30 seconds and the browser makes a small MP3 preview. Add the full track under Downloads (Mega).
+              Choose the full track (any size); you pick the 30 seconds and the browser makes a small MP3 preview. Add the full track under Downloads.
             </p>
             <PreviewUploader kind="audio" value={f.audio} onChange={(v) => setPreview("audio", v)} title={f.title} />
           </Panel>
@@ -498,7 +574,7 @@ export function CardEditor({
           <LinkList
             kind="download"
             title="Downloads"
-            hint="The ready-made file itself, e.g. a transparent .mov, the audio or the font."
+            hint="The file itself on any https host (Google Drive, Mega, Dropbox, WeTransfer, ...). One link per version, e.g. 1080p, 4K, Shorts."
             links={f.links}
             onChange={(links) => set("links", links)}
           />
@@ -529,7 +605,7 @@ export function CardEditor({
           <p className="text-xs text-fg-2">Drafts are visible only to admins.</p>
         </Panel>
         <Panel className="flex flex-col gap-3">
-          <p className="font-medium">Filters · {f.filterIds.size}</p>
+          <p className="font-medium">Tags · {f.filterIds.size}</p>
           {tax && (
             <FilterPicker
               groups={tax.groups}
@@ -546,7 +622,7 @@ export function CardEditor({
               }
             />
           )}
-          <p className="text-xs text-fg-2">Editors limited to some filters see this card only if it carries one of them.</p>
+          <p className="text-xs text-fg-2">Editors limited to some tags see this card only if it carries one of them.</p>
         </Panel>
         {error && <ErrorNote>{error}</ErrorNote>}
         {!error && problems.length > 0 && f.title && <p className="text-sm text-fg-2">{problems[0]}</p>}

@@ -1,12 +1,23 @@
 "use client";
 
 // Sections: add, edit (name, link, type), reorder, show/hide, delete.
+// Subsections are managed below the table (subsections-admin.tsx).
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { createSection, deleteSection, loadTaxonomy, reorder, slugify, updateSection, type SectionRow } from "@/lib/admin-api";
+import {
+  createSection,
+  deleteSection,
+  loadTaxonomy,
+  reorder,
+  slugify,
+  updateSection,
+  type SectionRow,
+  type SubsectionRow,
+} from "@/lib/admin-api";
 import type { SectionKind } from "@/lib/types";
 import { useToast } from "../toast";
+import { SubsectionsAdmin } from "./subsections-admin";
 import { AdminFrame, Button, ConfirmButton, ErrorNote, Input, Panel, Select, Switch, TABLE } from "./ui";
 
 const KINDS: { value: SectionKind; label: string }[] = [
@@ -30,13 +41,16 @@ export function SectionsAdmin() {
   const router = useRouter();
   const [editing, setEditing] = useState<Draft | null>(null);
   const [rows, setRows] = useState<SectionRow[]>([]);
+  const [subs, setSubs] = useState<SubsectionRow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [kind, setKind] = useState<SectionKind>("gameplay");
 
   const load = useCallback(async () => {
     try {
-      setRows((await loadTaxonomy()).sections);
+      const t = await loadTaxonomy();
+      setRows(t.sections);
+      setSubs(t.subsections);
     } catch (e) {
       setError((e as Error).message);
     }
@@ -56,7 +70,13 @@ export function SectionsAdmin() {
       return true;
     } catch (e) {
       const msg = (e as Error).message;
-      toast(/foreign key|violates/i.test(msg) ? "This section still has cards. Move or delete them first." : /duplicate|unique/i.test(msg) ? "That link is already used by another section." : msg);
+      toast(
+        /foreign key|violates foreign/i.test(msg)
+          ? "This section still has cards. Move or delete them first."
+          : /duplicate|unique/i.test(msg)
+            ? "That link is already used here. Pick another name."
+            : msg,
+      );
       return false;
     }
   };
@@ -211,6 +231,7 @@ export function SectionsAdmin() {
           </tbody>
         </table>
       </div>
+      <SubsectionsAdmin sections={rows} subsections={subs} run={run} />
     </AdminFrame>
   );
 }

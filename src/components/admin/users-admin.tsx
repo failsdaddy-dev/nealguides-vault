@@ -20,10 +20,25 @@ import { useToast } from "../toast";
 import { FilterPicker, FilterSummary } from "./filter-picker";
 import { AdminFrame, Badge, Button, ConfirmButton, ErrorNote, Field, Input, Switch, TABLE } from "./ui";
 
-function tempPassword() {
+/** Same rule as the server (admin Edge Functions, supabase/config.toml):
+ *  12+ characters with a lower-case letter, an upper-case letter and a digit. */
+export function passwordProblem(pw: string): string | null {
+  if (pw.length < 12) return "The password needs at least 12 characters.";
+  if (pw.length > 72) return "The password can have at most 72 characters.";
+  if (!/[a-z]/.test(pw) || !/[A-Z]/.test(pw) || !/[0-9]/.test(pw)) {
+    return "The password needs a lower-case letter, an upper-case letter and a digit.";
+  }
+  return null;
+}
+
+/** 16 random characters (no look-alikes), always meeting the rule above. */
+function tempPassword(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
-  const bytes = crypto.getRandomValues(new Uint32Array(14));
-  return Array.from(bytes, (b) => chars[b % chars.length]).join("");
+  for (;;) {
+    const bytes = crypto.getRandomValues(new Uint32Array(16));
+    const pw = Array.from(bytes, (b) => chars[b % chars.length]).join("");
+    if (!passwordProblem(pw)) return pw;
+  }
 }
 
 function status(u: UserWithAccess): { label: string; tone: "green" | "red" | "plain" } {
@@ -69,7 +84,11 @@ function UserForm({
       className="flex flex-col gap-4 px-5 pb-5"
       onSubmit={async (e) => {
         e.preventDefault();
-        if (!d.allAccess && d.filterIds.size === 0) return setError("Choose at least one filter, or turn on All access.");
+        if (!d.allAccess && d.filterIds.size === 0) return setError("Choose at least one tag, or turn on All access.");
+        if (d.password) {
+          const pw = passwordProblem(d.password);
+          if (pw) return setError(pw);
+        }
         setBusy(true);
         setError(null);
         try {
@@ -90,7 +109,7 @@ function UserForm({
           </Field>
           <Field label="Password" hint="Share it privately. The editor signs in with this password." className="sm:col-span-2">
             <div className="flex gap-2">
-              <Input required minLength={10} value={d.password} onChange={(e) => setD({ ...d, password: e.target.value })} className="font-mono" />
+              <Input required minLength={12} maxLength={72} value={d.password} onChange={(e) => setD({ ...d, password: e.target.value })} className="font-mono" />
               <Button onClick={() => setD({ ...d, password: tempPassword() })}>Generate</Button>
               <Button onClick={() => navigator.clipboard.writeText(d.password).catch(() => {})}>Copy</Button>
             </div>
@@ -111,7 +130,7 @@ function UserForm({
         )}
       </div>
       <div className="flex flex-col gap-3">
-        <Switch checked={d.allAccess} onChange={(v) => setD({ ...d, allAccess: v })} label="All access (senior editor: sees everything)" />
+        <Switch checked={d.allAccess} onChange={(v) => setD({ ...d, allAccess: v })} label="All access (sees every published card; on by default)" />
         {!d.allAccess && (
           <div className="rounded-xl border border-line p-3">
             <p className="mb-2 text-sm font-medium">Can see cards with any of these filters · {d.filterIds.size}</p>
@@ -243,7 +262,7 @@ export function UsersAdmin() {
         {creating && (
           <UserForm
             mode="create"
-            initial={{ email: "", name: "", password: tempPassword(), allAccess: false, filterIds: new Set(), expires: "" }}
+            initial={{ email: "", name: "", password: tempPassword(), allAccess: true, filterIds: new Set(), expires: "" }}
             groups={tax.groups}
             filters={tax.filters}
             onCancel={() => setCreating(false)}
@@ -299,7 +318,7 @@ export function UsersAdmin() {
               New password for <b>{reset.user.email}</b>. Share it privately; the old one stops working.
             </p>
             <div className="flex gap-2">
-              <Input value={reset.password} onChange={(e) => setReset({ ...reset, password: e.target.value })} className="font-mono" minLength={10} />
+              <Input value={reset.password} onChange={(e) => setReset({ ...reset, password: e.target.value })} className="font-mono" minLength={12} maxLength={72} />
               <Button onClick={() => navigator.clipboard.writeText(reset.password).catch(() => {})}>Copy</Button>
             </div>
             <div className="flex justify-end gap-2">
@@ -308,6 +327,8 @@ export function UsersAdmin() {
                 variant="primary"
                 onClick={() => {
                   const r = reset;
+                  const pw = passwordProblem(r.password);
+                  if (pw) return toast(pw);
                   setReset(null);
                   act(() => manageUser("reset_password", r.user.id, { password: r.password }), "Password reset");
                 }}

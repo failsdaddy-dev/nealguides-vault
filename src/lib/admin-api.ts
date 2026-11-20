@@ -9,6 +9,7 @@ import type { Database, Json } from "./database.types";
 type Tables = Database["public"]["Tables"];
 export type CardRow = Tables["cards"]["Row"];
 export type SectionRow = Tables["sections"]["Row"];
+export type SubsectionRow = Tables["subsections"]["Row"];
 export type GroupRow = Tables["filter_groups"]["Row"];
 export type FilterRow = Tables["filters"]["Row"];
 export type ProfileRow = Tables["profiles"]["Row"];
@@ -21,6 +22,62 @@ export interface EditableLink {
   url: string;
 }
 
+// ------------------------------------------------------------ link checks
+// The same rules the database enforces (card_links CHECK), so the form can
+// say what is wrong before saving: https only, a host, no user:password@,
+// at most 2,000 characters. Any host is allowed (decision 22).
+export const MAX_LINKS = 20;
+
+export function linkProblem(url: string): string | null {
+  const v = url.trim();
+  if (!v) return "Paste the link.";
+  if (v.length > 2000) return "That link is too long (2,000 characters at most).";
+  if (!/^https:\/\//i.test(v)) return "Links must start with https://";
+  let u: URL;
+  try {
+    u = new URL(v);
+  } catch {
+    return "That doesn’t look like a web address.";
+  }
+  if (u.protocol !== "https:" || !u.hostname) return "Links must start with https://";
+  if (u.username || u.password) return "Remove the user name or password from the link.";
+  if (/\s/.test(v)) return "Links can’t contain spaces.";
+  // Same shape as the database check: the host is followed by "/" or nothing.
+  if (!/^https:\/\/[^/?#@\s]+(\/\S*)?$/i.test(v)) return "Use the full link, for example https://site.com/file";
+  return null;
+}
+
+export type HostKey = "google-drive" | "mega" | "dropbox" | "wetransfer" | "other";
+
+/** Host badge, the same mapping as private.link_host() in the database. */
+export function linkHost(url: string): { key: HostKey; name: string } {
+  let h = "";
+  try {
+    h = new URL(url.trim()).hostname.toLowerCase();
+  } catch {
+    return { key: "other", name: "" };
+  }
+  const is = (re: RegExp) => re.test(h);
+  const key: HostKey = is(/(^|\.)(drive|docs)\.google\.com$/)
+    ? "google-drive"
+    : is(/(^|\.)mega\.(nz|io)$/)
+      ? "mega"
+      : is(/(^|\.)dropbox\.com$/) || h === "dl.dropboxusercontent.com"
+        ? "dropbox"
+        : is(/(^|\.)wetransfer\.com$/) || h === "we.tl"
+          ? "wetransfer"
+          : "other";
+  return { key, name: h };
+}
+
+export const HOST_LABEL: Record<HostKey, string> = {
+  "google-drive": "Google Drive",
+  mega: "Mega",
+  dropbox: "Dropbox",
+  wetransfer: "WeTransfer",
+  other: "Other",
+};
+
 const sb = () => supabaseBrowser();
 
 function check<T>(res: { data: T; error: { message: string } | null }): T {
@@ -29,12 +86,18 @@ function check<T>(res: { data: T; error: { message: string } | null }): T {
 }
 
 export async function loadTaxonomy() {
-  const [sections, groups, filters] = await Promise.all([
+  const [sections, subsections, groups, filters] = await Promise.all([
     sb().from("sections").select("*").order("sort_order").order("name"),
+    sb().from("subsections").select("*").order("sort_order").order("name"),
     sb().from("filter_groups").select("*").order("sort_order").order("name"),
     sb().from("filters").select("*").order("sort_order").order("name"),
   ]);
-  return { sections: check(sections) ?? [], groups: check(groups) ?? [], filters: check(filters) ?? [] };
+  return {
+    sections: check(sections) ?? [],
+    subsections: check(subsections) ?? [],
+    groups: check(groups) ?? [],
+    filters: check(filters) ?? [],
+  };
 }
 
 export async function listCards() {
@@ -61,12 +124,14 @@ export async function getCardLinks(cardId: string): Promise<EditableLink[]> {
 export type CardInput = Pick<
   CardRow,
   | "section_id"
+  | "subsection_id"
   | "slug"
   | "title"
   | "description"
   | "media_type"
   | "preview_clip"
   | "audio_preview"
+  | "preview_image"
   | "loom_url"
   | "source_url"
   | "status"
@@ -119,20 +184,21 @@ export async function setCardFilters(cardId: string, filterIds: string[]) {
 
 export async function deleteCard(id: string) {
   // Remember the card's preview files first, so they leave Cloudinary too.
-  const { data } = await sb().from("cards").select("preview_clip, audio_preview").eq("id", id).maybeSingle();
+  const { data } = await sb().from("cards").select("preview_clip, audio_preview, preview_image").eq("id", id).maybeSingle();
   check(await sb().from("cards").delete().eq("id", id));
-  for (const f of [data?.preview_clip, data?.audio_preview]) {
+  for (const f of [data?.preview_clip, data?.audio_preview, data?.preview_image]) {
     const pid = (f as { public_id?: string } | null)?.public_id;
     if (pid) await deletePreviewFile(pid).catch(() => {});
   }
 }
 
 // ---------------------------------------------------------- preview files
-// Cloudinary holds only short previews (the real files stay on Mega). The
+// Cloudinary holds only short previews (the real files stay on their own
+// hosts: Google Drive, Mega, ...). The
 // admin's browser uploads them directly with a signature from the admin-only
 // cloudinary-sign-upload function; the card stores the file's details.
 
-export type PreviewKind = "video" | "audio";
+export type PreviewKind = "video" | "audio" | "image";
 
 export interface UploadTicket {
   upload_url: string;
@@ -145,7 +211,7 @@ export interface UploadTicket {
 
 export async function signPreviewUpload(kind: PreviewKind): Promise<UploadTicket> {
   const { data, error } = await sb().functions.invoke<UploadTicket & { error?: string }>("cloudinary-sign-upload", { body: { kind } });
-  if (error || !data?.signature) throw new Error(data?.error ?? "Couldn’t start the upload. Is Cloudinary set up (see docs/cloudinary-setup.md)?");
+  if (error || !data?.signature) throw new Error(data?.error ?? "Couldn’t start the upload. Cloudinary may not be set up yet (cloud name and keys as Supabase function secrets).");
   return data;
 }
 
@@ -159,7 +225,7 @@ export async function setCardStatus(id: string, status: CardRow["status"]) {
   check(await sb().from("cards").update({ status }).eq("id", id));
 }
 
-export async function reorder(kind: "cards" | "sections" | "filter_groups" | "filters", ids: string[]) {
+export async function reorder(kind: "cards" | "sections" | "subsections" | "filter_groups" | "filters", ids: string[]) {
   check(await sb().rpc("admin_reorder", { p_kind: kind, p_ids: ids }));
 }
 
@@ -200,6 +266,18 @@ export async function updateSection(id: string, patch: Partial<SectionRow>) {
 }
 export async function deleteSection(id: string) {
   check(await sb().from("sections").delete().eq("id", id));
+}
+
+// ------------------------------------------------------------ subsections
+export async function createSubsection(input: Pick<SubsectionRow, "section_id" | "name" | "slug">) {
+  check(await sb().from("subsections").insert(input));
+}
+export async function updateSubsection(id: string, patch: Partial<Pick<SubsectionRow, "name" | "slug" | "is_visible">>) {
+  check(await sb().from("subsections").update(patch).eq("id", id));
+}
+/** Cards in the subsection move back to the section's main list. */
+export async function deleteSubsection(id: string) {
+  check(await sb().from("subsections").delete().eq("id", id));
 }
 
 // ------------------------------------------------------------------ users

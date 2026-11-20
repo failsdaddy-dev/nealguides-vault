@@ -1,8 +1,9 @@
 "use client";
 
 // Audit log (R17): who did what, when. Logins come from a database trigger;
-// link opens and refusals from get-asset-link; admin actions from the admin
-// functions. Read-only, admin-only.
+// link opens and refusals from get-asset-link; user changes from the admin
+// functions; content changes (create, delete, publish) from database
+// triggers. Read-only, admin-only.
 
 import { useEffect, useMemo, useState } from "react";
 import { listAudit, listCards, type AuditRow } from "@/lib/admin-api";
@@ -17,7 +18,27 @@ const ACTIONS: { value: string; label: string }[] = [
   { value: "admin_disable", label: "Users disabled" },
   { value: "admin_delete", label: "Users deleted" },
   { value: "admin_set_access", label: "Access changed" },
+  { value: "admin_reset_password", label: "Passwords reset" },
+  { value: "admin_cards_create", label: "Cards created" },
+  { value: "admin_cards_publish", label: "Cards published" },
+  { value: "admin_cards_unpublish", label: "Cards unpublished" },
+  { value: "admin_cards_delete", label: "Cards deleted" },
+  { value: "admin_sections_create", label: "Sections created" },
+  { value: "admin_sections_delete", label: "Sections deleted" },
+  { value: "admin_subsections_create", label: "Subsections created" },
+  { value: "admin_subsections_delete", label: "Subsections deleted" },
+  { value: "preview_deleted", label: "Preview files deleted" },
 ];
+
+const CONTENT_ACTION = /^admin_(cards|sections|subsections|filter_groups|filters)_(create|delete|publish|unpublish)$/;
+const NOUN: Record<string, string> = {
+  cards: "card",
+  sections: "section",
+  subsections: "subsection",
+  filter_groups: "tag group",
+  filters: "tag",
+};
+const VERB: Record<string, string> = { create: "Created", delete: "Deleted", publish: "Published", unpublish: "Unpublished" };
 
 function describe(a: AuditRow, cardTitle: (id: string | null) => string | undefined): string {
   const d = (a.details ?? {}) as Record<string, unknown>;
@@ -25,11 +46,14 @@ function describe(a: AuditRow, cardTitle: (id: string | null) => string | undefi
     case "login":
       return "Signed in";
     case "open_link":
-      return `Opened “${d.label ?? "link"}” on ${cardTitle(a.card_id) ?? "a card"}`;
+      return `Opened “${d.label ?? "link"}”${d.host ? ` (${d.host})` : ""} on ${cardTitle(a.card_id) ?? "a card"}`;
     case "open_link_denied":
       return "Tried to open a link without access";
-    default:
+    default: {
+      const m = CONTENT_ACTION.exec(a.action);
+      if (m) return `${VERB[m[2]]} ${NOUN[m[1]]} “${String(d.name ?? d.slug ?? "")}”`;
       return [a.action.replace(/^admin_/, "").replace(/_/g, " "), d.email ? `· ${d.email}` : ""].join(" ");
+    }
   }
 }
 

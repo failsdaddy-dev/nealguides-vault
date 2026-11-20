@@ -1,26 +1,30 @@
 "use client";
 
 // Real data. Every read runs as the signed-in user, so RLS decides what comes
-// back. Mega URLs are never selected: card_links.url isn't even granted.
+// back. Download URLs are never selected: card_links.url isn't even granted.
+// Link rows carry only labels and host badges.
 
-import { parseAudioPreview, parsePreviewClip } from "./cloudinary-url";
+import { parseAudioPreview, parsePreviewClip, parsePreviewImage } from "./cloudinary-url";
 import type { DataSource } from "./data-source";
 import { supabaseBrowser } from "./supabase/client";
-import type { Card } from "./types";
+import type { Card, LinkHost } from "./types";
 
 type CardRow = {
   id: string;
   section_slug: string;
+  subsection_slug?: string | null;
   slug: string;
   title: string;
   description: string;
-  media_type: "youtube" | "audio";
+  media_type: "youtube" | "audio" | "image";
   loom_url: string | null;
   source_url: string | null;
   has_project_files: boolean;
   has_downloads: boolean;
   preview_clip: unknown;
   audio_preview: unknown;
+  preview_image?: unknown;
+  link_hosts?: string[] | null;
   filter_slugs: string[];
   sort_ts: string;
 };
@@ -29,6 +33,7 @@ function toCard(r: CardRow): Card {
   return {
     id: r.id,
     sectionSlug: r.section_slug,
+    subsectionSlug: r.subsection_slug ?? null,
     slug: r.slug,
     title: r.title,
     description: r.description,
@@ -39,6 +44,8 @@ function toCard(r: CardRow): Card {
     hasDownloads: r.has_downloads,
     previewClip: parsePreviewClip(r.preview_clip),
     audioPreview: parseAudioPreview(r.audio_preview),
+    previewImage: parsePreviewImage(r.preview_image),
+    linkHosts: (r.link_hosts ?? []) as LinkHost[],
     filterSlugs: r.filter_slugs ?? [],
     publishedAt: r.sort_ts,
   };
@@ -90,6 +97,7 @@ export const supabaseSource: DataSource = {
   async browse(query, after) {
     const { data, error } = await supabaseBrowser().rpc("browse_cards", {
       p_section: query.section,
+      p_sub: query.sub || undefined,
       p_filters: query.filters,
       p_q: query.q || undefined,
       p_sort: query.sort,
@@ -111,7 +119,7 @@ export const supabaseSource: DataSource = {
     const { data, error } = await supabaseBrowser()
       .from("cards")
       .select(
-        "id, slug, title, description, media_type, loom_url, source_url, has_project_files, has_downloads, preview_clip, audio_preview, published_at, created_at, sections!inner(slug), card_filters(filters(slug))",
+        "id, slug, title, description, media_type, loom_url, source_url, has_project_files, has_downloads, link_hosts, preview_clip, audio_preview, preview_image, published_at, created_at, sections!inner(slug), subsections(slug), card_filters(filters(slug))",
       )
       .eq("sections.slug", section)
       .eq("slug", slug)
@@ -125,6 +133,7 @@ export const supabaseSource: DataSource = {
     return toCard({
       ...data,
       section_slug: section,
+      subsection_slug: (data.subsections as { slug: string } | null)?.slug ?? null,
       filter_slugs: filters,
       sort_ts: data.published_at ?? data.created_at,
     });
@@ -133,12 +142,12 @@ export const supabaseSource: DataSource = {
   async linkLabels(cardId) {
     const { data, error } = await supabaseBrowser()
       .from("card_links")
-      .select("id, kind, label, sort_order")
+      .select("id, kind, label, host, host_name, sort_order")
       .eq("card_id", cardId)
       .order("kind")
       .order("sort_order");
     if (error) throw error;
-    return (data ?? []).map((l) => ({ id: l.id, kind: l.kind, label: l.label }));
+    return (data ?? []).map((l) => ({ id: l.id, kind: l.kind, label: l.label, host: l.host as LinkHost, hostName: l.host_name }));
   },
 
   async openLink(linkId) {
