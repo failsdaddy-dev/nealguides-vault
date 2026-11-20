@@ -837,9 +837,10 @@ select {
   border: 1px solid var(--line);
   background: linear-gradient(180deg, color-mix(in srgb, var(--bg-elev-2) 80%, transparent), var(--bg-elev));
   font-family: var(--font-heading), "Chakra Petch", sans-serif;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.1em;
+  line-height: 1.2;
   text-transform: uppercase;
   color: var(--fg);
   clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);

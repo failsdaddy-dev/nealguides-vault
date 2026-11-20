@@ -140,7 +140,7 @@ function GroupItem({
         onClick={() => setOpen((v) => !v)}
       >
         <span className="ng-group-mark" aria-hidden="true" />
-        <span className="min-w-0 flex-1 truncate text-left">{g.name}</span>
+        <span className="line-clamp-2 min-w-0 flex-1 py-2 text-left">{g.name}</span>
         <span className="ng-group-count">{sections.length}</span>
         <ChevronDown size={16} className="ng-nav-chevron" />
       </button>

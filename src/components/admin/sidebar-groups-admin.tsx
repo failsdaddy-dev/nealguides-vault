@@ -113,9 +113,14 @@ export function SidebarGroupsAdmin({
                       />
                       <Button onClick={() => setEditing({ id: g.id, name: g.name })}>Rename</Button>
                       {count > 0 ? (
-                        <Button disabled title="Move or delete its sections first">
-                          Delete
-                        </Button>
+                        <span className="flex items-center gap-2">
+                          <span className="text-xs text-fg-2">
+                            To delete, move or delete its {count} section{count === 1 ? "" : "s"} first
+                          </span>
+                          <Button disabled title="Move or delete its sections first">
+                            Delete
+                          </Button>
+                        </span>
                       ) : (
                         <ConfirmButton onConfirm={() => run(() => deleteSidebarGroup(g.id), "Group deleted")} confirmLabel="Delete?">
                           Delete
