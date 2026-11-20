@@ -1,4 +1,7 @@
-// Our own simple line icons (24x24, currentColor). No third-party icon set.
+// Neal Guides HUD icon set: drawn for this app (24x24, currentColor).
+// Style: angular geometry, square line caps, mitred corners, diamonds and
+// chamfered frames instead of circles and rounded boxes, to match the
+// gaming theme. No third-party icon set and nothing reused from RohTre.
 import type { SVGProps } from "react";
 
 type P = SVGProps<SVGSVGElement> & { size?: number };
@@ -11,9 +14,10 @@ function Svg({ size = 24, children, ...rest }: P) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.8}
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      strokeWidth={1.75}
+      strokeLinecap="square"
+      strokeLinejoin="miter"
+      strokeMiterlimit={10}
       aria-hidden="true"
       focusable="false"
       {...rest}
@@ -23,124 +27,150 @@ function Svg({ size = 24, children, ...rest }: P) {
   );
 }
 
+// ------------------------------------------------------------ navigation
 export const MenuIcon = (p: P) => (
-  <Svg {...p}><path d="M3 6h18M3 12h18M3 18h18" /></Svg>
+  <Svg {...p}><path d="M3 6h18M3 12h12M3 18h18" /><path d="M19 11h2v2h-2z" fill="currentColor" stroke="none" /></Svg>
 );
 export const SearchIcon = (p: P) => (
-  <Svg {...p}><circle cx="10.5" cy="10.5" r="6.5" /><path d="m15.5 15.5 5 5" /></Svg>
+  <Svg {...p}><path d="M10.5 3.5 16.6 7v7l-6.1 3.5L4.4 14V7z" /><path d="m15.6 15.6 5 5" /></Svg>
 );
 export const CloseIcon = (p: P) => (
   <Svg {...p}><path d="M6 6l12 12M18 6 6 18" /></Svg>
 );
 export const BackIcon = (p: P) => (
-  <Svg {...p}><path d="M20 12H5M11 5l-7 7 7 7" /></Svg>
+  <Svg {...p}><path d="M20 12H5.5M11 6l-6 6 6 6" /></Svg>
 );
 export const ChevronLeft = (p: P) => (
-  <Svg {...p}><path d="m15 5-7 7 7 7" /></Svg>
+  <Svg {...p}><path d="M15 5l-7 7 7 7" /></Svg>
 );
 export const ChevronRight = (p: P) => (
-  <Svg {...p}><path d="m9 5 7 7-7 7" /></Svg>
+  <Svg {...p}><path d="M9 5l7 7-7 7" /></Svg>
 );
 export const ChevronDown = (p: P) => (
-  <Svg {...p}><path d="m5 9 7 7 7-7" /></Svg>
-);
-export const SunIcon = (p: P) => (
-  <Svg {...p}><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></Svg>
-);
-export const MoonIcon = (p: P) => (
-  <Svg {...p}><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z" /></Svg>
-);
-export const SparkIcon = (p: P) => (
-  <Svg {...p}><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" /><path d="M19 16l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2Z" /></Svg>
-);
-export const MusicIcon = (p: P) => (
-  <Svg {...p}><path d="M9 18V5l11-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="17" cy="16" r="3" /></Svg>
-);
-export const SoundIcon = (p: P) => (
-  <Svg {...p}><path d="M4 9v6h4l5 4V5L8 9H4Z" /><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" /></Svg>
-);
-export const FontIcon = (p: P) => (
-  <Svg {...p}><path d="M4 19 9 5h1l5 14M6 14h7" /><path d="M17 12.5c.6-.6 1.4-1 2.3-1 1.5 0 2.2.9 2.2 2.3V19m0-3.5c-2.8 0-4.5.5-4.5 2 0 1 .8 1.7 1.9 1.7 1.4 0 2.6-1 2.6-2.4" /></Svg>
-);
-export const ShapesIcon = (p: P) => (
-  <Svg {...p}><rect x="3" y="13" width="8" height="8" rx="1.5" /><circle cx="17" cy="7" r="4" /><path d="M14 21h7l-3.5-6L14 21Z" /><path d="M3 5h8M7 3v8" /></Svg>
-);
-export const TuneIcon = (p: P) => (
-  <Svg {...p}><path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" /></Svg>
-);
-export const PlayIcon = (p: P) => (
-  <Svg {...p}><path d="M8 5.5v13l10.5-6.5L8 5.5Z" fill="currentColor" stroke="none" /></Svg>
-);
-export const PauseIcon = (p: P) => (
-  <Svg {...p}><path d="M8 5h3v14H8zM13 5h3v14h-3z" fill="currentColor" stroke="none" /></Svg>
-);
-export const LoopIcon = (p: P) => (
-  <Svg {...p}><path d="M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4" /></Svg>
-);
-export const VolumeIcon = (p: P) => (
-  <Svg {...p}><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4v-5ZM15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" /></Svg>
-);
-export const VolumeOffIcon = (p: P) => (
-  <Svg {...p}><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4v-5ZM16 9.5l5 5M21 9.5l-5 5" /></Svg>
-);
-export const UploadIcon = (p: P) => (
-  <Svg {...p}><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5M5 15v3.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V15" /></Svg>
-);
-export const FolderIcon = (p: P) => (
-  <Svg {...p}><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" /></Svg>
-);
-export const DownloadIcon = (p: P) => (
-  <Svg {...p}><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></Svg>
-);
-export const ExternalIcon = (p: P) => (
-  <Svg {...p}><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></Svg>
-);
-export const LinkIcon = (p: P) => (
-  <Svg {...p}><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" /><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" /></Svg>
-);
-export const PencilIcon = (p: P) => (
-  <Svg {...p}><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" /><path d="m13.5 6.5 4 4" /></Svg>
-);
-export const CheckIcon = (p: P) => (
-  <Svg {...p}><path d="m5 12.5 4.5 4.5L19 7.5" /></Svg>
-);
-export const MoreIcon = (p: P) => (
-  <Svg {...p}><circle cx="12" cy="5" r="1.3" fill="currentColor" /><circle cx="12" cy="12" r="1.3" fill="currentColor" /><circle cx="12" cy="19" r="1.3" fill="currentColor" /></Svg>
-);
-export const ShieldIcon = (p: P) => (
-  <Svg {...p}><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6l-7-3Z" /></Svg>
-);
-export const LogoutIcon = (p: P) => (
-  <Svg {...p}><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 8l-4 4 4 4M6 12h10" /></Svg>
-);
-export const LockIcon = (p: P) => (
-  <Svg {...p}><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></Svg>
-);
-export const GameplayIcon = (p: P) => (
-  <Svg {...p}><rect x="2.5" y="7" width="19" height="11" rx="5.5" /><path d="M7.5 10.5v4M5.5 12.5h4" /><circle cx="15.5" cy="11.5" r="1" fill="currentColor" /><circle cx="17.5" cy="13.8" r="1" fill="currentColor" /></Svg>
-);
-export const LayersIcon = (p: P) => (
-  <Svg {...p}><path d="m12 3 9 5-9 5-9-5 9-5Z" /><path d="m3 13 9 5 9-5" /></Svg>
-);
-export const ScissorsIcon = (p: P) => (
-  <Svg {...p}><circle cx="6" cy="6.5" r="2.5" /><circle cx="6" cy="17.5" r="2.5" /><path d="M8 8.2 20 18M8 15.8 20 6" /></Svg>
-);
-export const MailIcon = (p: P) => (
-  <Svg {...p}><rect x="3" y="5" width="18" height="14" rx="3" /><path d="m4 7 8 6 8-6" /></Svg>
-);
-export const EyeIcon = (p: P) => (
-  <Svg {...p}><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" /><circle cx="12" cy="12" r="3" /></Svg>
-);
-export const EyeOffIcon = (p: P) => (
-  <Svg {...p}><path d="M10.6 5.6A9.6 9.6 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-2.6 3.4M6.6 6.6C3.9 8.3 2.5 12 2.5 12S6 18.5 12 18.5c1.9 0 3.5-.6 4.9-1.5M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18" /></Svg>
+  <Svg {...p}><path d="M5 9l7 7 7-7" /></Svg>
 );
 export const ArrowRightIcon = (p: P) => (
-  <Svg {...p}><path d="M5 12h14M13 6l6 6-6 6" /></Svg>
+  <Svg {...p}><path d="M4 12h14.5M13 6l6 6-6 6" /></Svg>
+);
+export const MoreIcon = (p: P) => (
+  <Svg {...p}><path d="M10.5 3.5h3v3h-3zM10.5 10.5h3v3h-3zM10.5 17.5h3v3h-3z" fill="currentColor" stroke="none" /></Svg>
+);
+
+// ------------------------------------------------------------- sections
+/** FC gameplay: an angular controller. */
+export const GameplayIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M6 7h12l4 5v4l-2.5 3H16l-2-3h-4l-2 3H4.5L2 16v-4z" />
+    <path d="M7.5 10v4M5.5 12h4" />
+    <path d="M15.5 10h1.6v1.6h-1.6zM17.9 12.4h1.6V14h-1.6z" fill="currentColor" stroke="none" />
+  </Svg>
+);
+/** Effects: a four-point burst with a small spark. */
+export const SparkIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M11 3l1.9 6.1L19 11l-6.1 1.9L11 19l-1.9-6.1L3 11l6.1-1.9z" />
+    <path d="M19 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z" fill="currentColor" stroke="none" />
+  </Svg>
+);
+/** Music: a beamed note with diamond heads. */
+export const MusicIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M9 17.5V5.5l11-2.5v12" />
+    <path d="M9 9l11-2.5" />
+    <path d="M6 14.5l3 3-3 3-3-3zM17 12l3 3-3 3-3-3z" fill="currentColor" stroke="none" />
+  </Svg>
+);
+/** Backgrounds: a chamfered frame with a horizon. */
+export const BackgroundIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M3 7l3-3h15v13l-3 3H3z" />
+    <path d="M3 16l5-5 4 4 3-3 6 6" />
+    <path d="M15 7.5h2.5V10H15z" fill="currentColor" stroke="none" />
+  </Svg>
+);
+/** Stacked layers (used for image previews in the admin). */
+export const LayersIcon = (p: P) => (
+  <Svg {...p}><path d="M12 3l9 5-9 5-9-5z" /><path d="M3 12.5l9 5 9-5M3 16.5l9 5 9-5" /></Svg>
+);
+/** Subsection marker: a small diamond. */
+export const DiamondIcon = (p: P) => (
+  <Svg {...p}><path d="M12 5l7 7-7 7-7-7z" fill="currentColor" stroke="none" /></Svg>
+);
+/** Folder (generic section fallback). */
+export const FolderIcon = (p: P) => (
+  <Svg {...p}><path d="M3 5h6.5l2 2.5H21V19H3z" /><path d="M3 10.5h18" /></Svg>
+);
+
+// --------------------------------------------------------------- tools
+export const TuneIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M3 7h18M3 17h18" />
+    <path d="M15 4.5l2.5 2.5-2.5 2.5-2.5-2.5zM9 14.5l2.5 2.5L9 19.5 6.5 17z" fill="currentColor" stroke="none" />
+  </Svg>
+);
+export const ShieldIcon = (p: P) => (
+  <Svg {...p}><path d="M12 2.5 20 5.5v6l-2 5.5-6 4.5-6-4.5-2-5.5v-6z" /><path d="M8.5 12l2.5 2.5 4.5-5" /></Svg>
+);
+export const LockIcon = (p: P) => (
+  <Svg {...p}><path d="M5 11h14v8l-2 2H5z" /><path d="M8 11V7l2-2.5h4L16 7v4" /><path d="M11 15h2v2h-2z" fill="currentColor" stroke="none" /></Svg>
+);
+export const LogoutIcon = (p: P) => (
+  <Svg {...p}><path d="M14 3.5h6.5v17H14" /><path d="M10 8l-4 4 4 4M6 12h10.5" /></Svg>
+);
+export const MailIcon = (p: P) => (
+  <Svg {...p}><path d="M3 5.5h18v13H3z" /><path d="M3 5.5l9 7 9-7" /></Svg>
+);
+export const EyeIcon = (p: P) => (
+  <Svg {...p}><path d="M2 12l5-6h10l5 6-5 6H7z" /><path d="M12 9l3 3-3 3-3-3z" fill="currentColor" stroke="none" /></Svg>
+);
+export const EyeOffIcon = (p: P) => (
+  <Svg {...p}><path d="M9.5 6H17l5 6-2.6 3.1M14.6 18H7l-5-6 2.6-3.1" /><path d="M3 3l18 18" /></Svg>
+);
+export const PencilIcon = (p: P) => (
+  <Svg {...p}><path d="M4 20v-4L16 4l4 4L8 20z" /><path d="M13 7l4 4" /></Svg>
+);
+export const CheckIcon = (p: P) => (
+  <Svg {...p}><path d="M4 12.5l5 5L20 6.5" /></Svg>
+);
+
+// ------------------------------------------------------------- playback
+export const PlayIcon = (p: P) => (
+  <Svg {...p}><path d="M7 4.5v15l12-7.5z" fill="currentColor" stroke="none" /></Svg>
+);
+export const PauseIcon = (p: P) => (
+  <Svg {...p}><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor" stroke="none" /></Svg>
+);
+export const LoopIcon = (p: P) => (
+  <Svg {...p}><path d="M4 11V7h14.5M15.5 4l3 3-3 3" /><path d="M20 13v4H5.5M8.5 20l-3-3 3-3" /></Svg>
+);
+export const VolumeIcon = (p: P) => (
+  <Svg {...p}><path d="M3.5 9h4L13 4.5v15L7.5 15h-4z" /><path d="M16.5 9v6M19.5 6.5v11" /></Svg>
+);
+export const VolumeOffIcon = (p: P) => (
+  <Svg {...p}><path d="M3.5 9h4L13 4.5v15L7.5 15h-4z" /><path d="M16 9.5l5 5M21 9.5l-5 5" /></Svg>
+);
+
+// -------------------------------------------------------- files and links
+export const DownloadIcon = (p: P) => (
+  <Svg {...p}><path d="M12 3.5v11M6.5 9.5l5.5 5.5 5.5-5.5" /><path d="M4 17.5v3h16v-3" /></Svg>
+);
+export const UploadIcon = (p: P) => (
+  <Svg {...p}><path d="M12 15V4M6.5 9.5 12 4l5.5 5.5" /><path d="M4 17.5v3h16v-3" /></Svg>
+);
+export const ExternalIcon = (p: P) => (
+  <Svg {...p}><path d="M14 3.5h6.5V10M20.5 3.5l-9 9" /><path d="M18 14v6.5H3.5V6H10" /></Svg>
+);
+export const LinkIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M10.5 7.5 13 5h4.5L20 7.5V12l-2.5 2.5" />
+    <path d="M13.5 16.5 11 19H6.5L4 16.5V12l2.5-2.5" />
+    <path d="M9 15l6-6" />
+  </Svg>
 );
 
 export const SECTION_ICONS = {
   gameplay: GameplayIcon,
   effect: SparkIcon,
   music: MusicIcon,
-  background: LayersIcon,
+  background: BackgroundIcon,
 } as const;

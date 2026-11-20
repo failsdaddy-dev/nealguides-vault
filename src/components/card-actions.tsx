@@ -1,14 +1,15 @@
 "use client";
 
-// The three card buttons. Tutorial opens the Loom video on loom.com in a new
-// tab (no player on this site). Project files and
-// Download ask the server for the Mega link only when clicked (R16); a card
-// with several links (one per software or file type) shows a small menu.
+// The three card buttons (HUD style). Tutorial opens the Loom video on
+// loom.com in a new tab. Project files and Download ask the server for the
+// link only when clicked; the address is never in the page. A card with
+// several links (e.g. 1080p, 4K) shows a menu with each link's host badge.
 
 import { useCallback, useRef, useState } from "react";
 import { cardButtons, type ButtonId } from "@/lib/card-buttons";
 import { getDataSource } from "@/lib/data-source";
 import type { Card, LinkKind, LinkLabel, SectionKind } from "@/lib/types";
+import { hostBadge } from "@/lib/link-hosts";
 import { loomShareUrl } from "@/lib/loom";
 import { DownloadIcon, ExternalIcon, FolderIcon, PlayIcon } from "./icons";
 import { useDismiss } from "./popover";
@@ -60,7 +61,7 @@ export function CardActions({
   const openLink = async (link: LinkLabel) => {
     setMenu(null);
     if (!source.linksConnected) {
-      toast(`Sample data: “${link.label}” will open its Mega link once links are connected (Stage 6).`);
+      toast(`Sample mode: “${link.label}” opens its real link once Supabase is connected.`);
       return;
     }
     try {
@@ -112,13 +113,7 @@ export function CardActions({
               aria-haspopup={b.id === "project" || b.id === "download" ? "menu" : undefined}
               aria-expanded={menu?.kind === (b.id === "project" ? "project" : "download") ? true : undefined}
               onClick={() => onClick(b.id)}
-              className={`vh-press flex min-w-0 items-center justify-center gap-1.5 rounded-full px-2 font-medium disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100 ${
-                page ? "h-10 text-sm" : "h-9 text-[13px]"
-              } ${
-                primary
-                  ? "bg-chip-on-bg text-chip-on-fg enabled:hover:opacity-90"
-                  : "bg-chip enabled:hover:bg-chip-hover"
-              }`}
+              className={`ng-act vh-press ${page ? "h-11 text-[13px]" : "h-9 text-[11.5px]"} ${primary ? "ng-act-primary" : ""}`}
             >
               <Icon size={page ? 18 : 16} className="shrink-0" />
               <span className="truncate">{page ? b.long : b.short}</span>
@@ -131,7 +126,7 @@ export function CardActions({
         <div
           role="menu"
           aria-label={menu.kind === "project" ? "Project files" : "Downloads"}
-          className={`vh-pop-in absolute top-full z-30 mt-2 w-56 vh-menu ${
+          className={`vh-pop-in absolute top-full z-30 mt-2 w-64 vh-menu ${
             menu.kind === "project" ? "left-1/3 -translate-x-1/4 origin-top" : "right-0 origin-top-right"
           }`}
         >
@@ -143,8 +138,13 @@ export function CardActions({
               onClick={() => openLink(l)}
               className="vh-menu-item flex w-full items-center gap-3 text-left text-sm"
             >
-              {menu.kind === "project" ? <FolderIcon size={18} /> : <DownloadIcon size={18} />}
-              <span className="truncate">{l.label}</span>
+              {menu.kind === "project" ? (
+                <FolderIcon size={18} className="shrink-0 text-brand" />
+              ) : (
+                <DownloadIcon size={18} className="shrink-0 text-brand" />
+              )}
+              <span className="min-w-0 flex-1 truncate">{l.label}</span>
+              {l.host && <span className="ng-chip shrink-0">{hostBadge(l.host, l.hostName)}</span>}
             </button>
           ))}
         </div>

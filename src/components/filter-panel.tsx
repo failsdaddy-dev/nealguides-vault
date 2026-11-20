@@ -83,8 +83,8 @@ export function FilterPanel({
           const visible = showAll ? list : list.slice(0, COLLAPSED);
           return (
             <section key={g.id} aria-labelledby={`fg-${g.id}`}>
-              <h3 id={`fg-${g.id}`} className="mb-2 text-sm font-medium">
-                {g.name} <span className="font-normal text-fg-2">· {list.length}</span>
+              <h3 id={`fg-${g.id}`} className="ng-tag mb-3">
+                {g.name} <span className="text-fg-2">· {list.length}</span>
               </h3>
               <div className="flex flex-wrap gap-2">
                 {visible.map((f) => {
@@ -96,9 +96,7 @@ export function FilterPanel({
                       type="button"
                       aria-pressed={on}
                       onClick={() => toggle(f.slug)}
-                      className={`vh-press flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm font-medium ${
-                        on ? "bg-chip-on-bg text-chip-on-fg" : "bg-chip hover:bg-chip-hover"
-                      } ${!on && n === 0 ? "opacity-60" : ""}`}
+                      className={`ng-filter vh-press ${!on && n === 0 ? "opacity-60" : ""}`}
                     >
                       {on && <CheckIcon size={16} />}
                       {f.name}

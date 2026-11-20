@@ -9,7 +9,18 @@
 import { useEffect, useState } from "react";
 import { clipLoopUrl } from "@/lib/cloudinary-url";
 
-export function ClipPreview({ url, active, delayMs = 0 }: { url: string; active: boolean; delayMs?: number }) {
+export function ClipPreview({
+  url,
+  active,
+  delayMs = 0,
+  fit = "cover",
+}: {
+  url: string;
+  active: boolean;
+  delayMs?: number;
+  /** "contain" shows a vertical clip whole (Shorts). */
+  fit?: "cover" | "contain";
+}) {
   const [go, setGo] = useState(false);
   const [shown, setShown] = useState(false);
 
@@ -35,7 +46,7 @@ export function ClipPreview({ url, active, delayMs = 0 }: { url: string; active:
       aria-hidden="true"
       tabIndex={-1}
       onPlaying={() => setShown(true)}
-      className={`pointer-events-none absolute inset-0 h-full w-full object-cover transition-opacity duration-200 ${shown ? "opacity-100" : "opacity-0"}`}
+      className={`pointer-events-none absolute inset-0 h-full w-full ${fit === "contain" ? "object-contain" : "object-cover"} transition-opacity duration-200 ${shown ? "opacity-100" : "opacity-0"}`}
     />
   );
 }

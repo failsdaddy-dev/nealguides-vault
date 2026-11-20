@@ -721,6 +721,349 @@ select {
   letter-spacing: 0.06em;
 }
 
+/* ------------------------------------------------------------ HUD menu
+   Left menu (guide.tsx): section rows with an angled icon tile, a dropdown
+   of subsections on a rail with diamond markers, and an icon rail mode. */
+.ng-guide {
+  border-right: 1px solid var(--line);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-elev) 85%, transparent), var(--bg));
+  scrollbar-width: thin;
+}
+.ng-nav-item { animation: vh-nav-in 320ms var(--ease-out) calc(var(--i, 0) * 45ms) backwards; }
+.ng-nav-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  transition: background-color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease);
+}
+.ng-nav-row:hover { background: var(--hover); border-color: var(--line); }
+.ng-nav-row::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  background: var(--green);
+  box-shadow: 0 0 10px var(--green);
+  transform: scaleY(0);
+  transition: transform var(--dur-3) var(--ease);
+}
+.ng-nav-row[data-active] {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--green) 15%, transparent), transparent 90%);
+  border-color: color-mix(in srgb, var(--green) 28%, transparent);
+}
+.ng-nav-row[data-active]::before { transform: scaleY(1); }
+.ng-nav-link {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px;
+  font-family: var(--font-heading), "Chakra Petch", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+  transition: color var(--dur-2) var(--ease);
+}
+.ng-nav-row:hover .ng-nav-link,
+.ng-nav-row[data-active] .ng-nav-link { color: var(--fg); }
+.ng-nav-link:focus-visible { outline-offset: -2px; }
+/* Angled icon tile; the shape is drawn by ::before so badges can overflow. */
+.ng-nav-icon {
+  position: relative;
+  display: grid;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  color: var(--fg-2);
+  transition: color var(--dur-2) var(--ease);
+}
+.ng-nav-icon::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgba(255, 255, 255, 0.05);
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+  transition: background-color var(--dur-2) var(--ease);
+}
+.ng-nav-icon { isolation: isolate; }
+.ng-nav-row:hover .ng-nav-icon,
+.ng-rail-link:hover .ng-nav-icon { color: var(--green); }
+.ng-nav-row:hover .ng-nav-icon::before,
+.ng-rail-link:hover .ng-nav-icon::before { background: color-mix(in srgb, var(--green) 14%, transparent); }
+.ng-nav-row[data-active] .ng-nav-icon,
+.ng-rail-link[data-active] .ng-nav-icon { color: var(--navy); }
+.ng-nav-row[data-active] .ng-nav-icon::before,
+.ng-rail-link[data-active] .ng-nav-icon::before {
+  background: var(--green);
+}
+.ng-nav-toggle {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  margin-right: 6px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 3px;
+  color: var(--fg-2);
+  transition: color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease);
+}
+.ng-nav-toggle:hover { color: var(--green); background: var(--hover); }
+.ng-nav-chevron { transition: transform var(--dur-3) var(--ease); }
+.ng-nav-toggle[aria-expanded="true"] .ng-nav-chevron { transform: rotate(180deg); color: var(--green); }
+
+/* Subsection dropdown: animated open/close. */
+.ng-subnav {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows var(--dur-3) var(--ease), opacity var(--dur-3) var(--ease);
+}
+.ng-subnav[data-open] { grid-template-rows: 1fr; opacity: 1; }
+.ng-subnav-list {
+  position: relative;
+  margin: 4px 0 6px 23px;
+  padding: 2px 0;
+  border-left: 1px solid var(--line);
+}
+.ng-subnav-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 10px 0 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg-2);
+  transition: color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease);
+}
+.ng-subnav-link::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin-top: -3.5px;
+  background: var(--bg);
+  border: 1px solid var(--navy-2);
+  transform: rotate(45deg);
+  transition: background-color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+.ng-subnav-link:hover { color: var(--fg); background: linear-gradient(90deg, var(--hover), transparent); }
+.ng-subnav-link:hover::before { border-color: var(--green); }
+.ng-subnav-link[aria-current="page"] {
+  color: var(--green);
+  font-weight: 600;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--green) 10%, transparent), transparent);
+}
+.ng-subnav-link[aria-current="page"]::before {
+  background: var(--green);
+  border-color: var(--green);
+  box-shadow: 0 0 8px var(--green);
+}
+.ng-subnav-link:focus-visible { outline-offset: -2px; }
+
+/* Icon rail (medium screens). */
+.ng-rail-link {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 2px;
+  border-radius: 3px;
+  font-family: var(--font-heading), "Chakra Petch", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+  transition: color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease);
+}
+.ng-rail-link:hover { color: var(--fg); background: var(--hover); }
+.ng-rail-link[data-active] { color: var(--fg); }
+.ng-rail-link[data-active]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 14px;
+  height: 22px;
+  width: 3px;
+  background: var(--green);
+  box-shadow: 0 0 10px var(--green);
+}
+
+/* ------------------------------------------------------------ HUD cards */
+.ng-card { overflow: visible; }
+/* A lifted card (or one with an open menu) stays above its neighbours. */
+.ng-card:hover,
+.ng-card:focus-within,
+.ng-card:has([aria-expanded="true"]) { z-index: 10; }
+.ng-card-media {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #07060f;
+  border-bottom: 1px solid var(--line);
+}
+/* Faint scanlines over previews; a green sweep passes on hover. */
+.ng-card-scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 3px);
+  opacity: 0.55;
+}
+.ng-card-scan::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 40%, color-mix(in srgb, var(--green) 22%, transparent) 50%, transparent 60%);
+  background-size: 250% 100%;
+  background-position: 130% 0;
+  transition: background-position 700ms var(--ease);
+}
+.ng-card:hover .ng-card-scan::after { background-position: -30% 0; }
+.ng-card-type {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  z-index: 2;
+  padding: 4px 9px 4px 10px;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  color: var(--green);
+  font-family: var(--font-heading), "Chakra Petch", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  pointer-events: none;
+}
+.ng-card-ph {
+  background:
+    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(135deg, var(--bg-elev-2), var(--bg));
+}
+/* Tag chip. */
+.ng-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--fg-2);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+/* Card action buttons. */
+.ng-act {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--fg);
+  font-family: var(--font-heading), "Chakra Petch", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}
+.ng-act > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ng-act:enabled:hover { border-color: var(--green); color: var(--green); background: color-mix(in srgb, var(--green) 8%, transparent); }
+.ng-act-primary { border-color: var(--green); background: var(--green); color: var(--navy); }
+.ng-act-primary:enabled:hover { background: var(--green-press); border-color: var(--green-press); color: var(--navy); }
+.ng-act:disabled { cursor: not-allowed; opacity: 0.35; }
+.ng-act:disabled:active { transform: none; }
+.ng-act:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--fg); }
+
+/* Filter chips (quick row and "More filters" panel); on = aria-pressed. */
+.ng-filter {
+  display: inline-flex;
+  height: 32px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--fg-2);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}
+.ng-filter:hover { color: var(--fg); border-color: color-mix(in srgb, var(--green) 50%, var(--line)); }
+.ng-filter[aria-pressed="true"] {
+  border-color: var(--green);
+  background: var(--green);
+  color: var(--navy);
+}
+.ng-filter:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--fg); }
+
+/* Section title bar and subsection tabs. */
+.ng-section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px 0 14px;
+}
+.ng-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--line);
+}
+.ng-tab {
+  position: relative;
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  color: var(--fg-2);
+  font-family: var(--font-heading), "Chakra Petch", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease);
+}
+.ng-tab::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: -1px;
+  height: 2px;
+  background: var(--green);
+  box-shadow: 0 0 10px var(--green);
+  transform: scaleX(0);
+  transition: transform var(--dur-3) var(--ease);
+}
+.ng-tab:hover { color: var(--fg); background: linear-gradient(0deg, var(--hover), transparent); }
+.ng-tab[aria-current="page"] { color: var(--green); }
+.ng-tab[aria-current="page"]::after { transform: scaleX(1); }
+.ng-tab:focus-visible { outline-offset: -2px; }
+
 /* Thin scrollbars in the theme colours. */
 * { scrollbar-width: thin; scrollbar-color: var(--navy-2) transparent; }
 

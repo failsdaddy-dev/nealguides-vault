@@ -39,5 +39,7 @@ export function useBrowseUrl(sectionOverride?: string) {
     toggle: (slug: string) => go({ filters: toggleFilter(state.filters, slug) }),
     remove: (slug: string) => go({ filters: state.filters.filter((f) => f !== slug) }),
     clearFilters: () => go({ filters: [] }),
+    /** Switch subsection (undefined = the whole section); keeps search, resets nothing else. */
+    setSub: (sub: string | undefined) => go({ sub }),
   };
 }

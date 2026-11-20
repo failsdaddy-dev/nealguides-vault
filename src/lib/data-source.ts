@@ -11,7 +11,7 @@ export interface DataSource {
   linksConnected: boolean;
   sections(): Promise<Section[]>;
   filters(): Promise<{ groups: FilterGroup[]; filters: Filter[] }>;
-  filterCounts(section: string): Promise<Record<string, number>>;
+  filterCounts(section: string, sub?: string): Promise<Record<string, number>>;
   browse(query: BrowseQuery, after?: Cursor | null): Promise<BrowsePage>;
   card(section: string, slug: string): Promise<Card | null>;
   linkLabels(cardId: string): Promise<LinkLabel[]>;
@@ -78,17 +78,22 @@ export const mockSource: DataSource = {
   async filters() {
     return { groups: FILTER_GROUPS, filters: FILTERS };
   },
-  async filterCounts(section) {
+  async filterCounts(section, sub) {
     const counts: Record<string, number> = {};
     for (const c of CARDS) {
-      if (c.sectionSlug !== section) continue;
+      if (c.sectionSlug !== section || (sub && c.subsectionSlug !== sub)) continue;
       for (const s of c.filterSlugs) counts[s] = (counts[s] ?? 0) + 1;
     }
     return counts;
   },
   async browse(query, after) {
     await wait(after ? 450 : 300);
-    const scored = CARDS.filter((c) => c.sectionSlug === query.section && matchesFilters(c, query.filters, FILTERS))
+    const scored = CARDS.filter(
+      (c) =>
+        c.sectionSlug === query.section &&
+        (!query.sub || c.subsectionSlug === query.sub) &&
+        matchesFilters(c, query.filters, FILTERS),
+    )
       .map((c) => ({ c, score: query.q ? searchScore(c, query.q, FILTERS) : 0 }))
       .filter((x) => !query.q || x.score > 0);
 

@@ -5,7 +5,7 @@
 import type { Card, Filter, FilterGroup, LinkLabel, Section } from "./types";
 
 export const SECTIONS: Section[] = [
-  { slug: "fc-gameplay-clips", name: "FC Gameplay Clips", kind: "gameplay" },
+  { slug: "fc-gameplay-clips", name: "FC Gameplay Clips", kind: "gameplay", subsections: [{ slug: "shorts", name: "Shorts" }] },
   { slug: "effects", name: "Effects", kind: "effect" },
   { slug: "music", name: "Music", kind: "music" },
   { slug: "backgrounds", name: "Backgrounds", kind: "background" },
@@ -116,6 +116,8 @@ export const CARDS: Card[] = seeds.map(([section, title, filters, opts], i) => {
   return {
     id: `c-${String(i + 1).padStart(3, "0")}`,
     sectionSlug: section,
+    // Sample mode: every third gameplay clip sits in the Shorts subsection.
+    subsectionSlug: section === "fc-gameplay-clips" && i % 3 === 2 ? "shorts" : null,
     slug: slugify(title),
     title,
     description: descriptions[kind],

@@ -29,13 +29,19 @@ export async function loadHubData(): Promise<HubData> {
   }
   const viewer = await requireViewer();
   const sb = await supabaseServer();
-  const [sections, groups, filters] = await Promise.all([
-    sb.from("sections").select("slug, name, kind").eq("is_visible", true).order("sort_order").order("name"),
+  const [sections, subsections, groups, filters] = await Promise.all([
+    sb.from("sections").select("id, slug, name, kind").eq("is_visible", true).order("sort_order").order("name"),
+    sb.from("subsections").select("section_id, slug, name").eq("is_visible", true).order("sort_order").order("name"),
     sb.from("filter_groups").select("id, slug, name").order("sort_order").order("name"),
     sb.from("filters").select("id, group_id, slug, name, is_quick").order("sort_order").order("name"),
   ]);
   return {
-    sections: sections.data ?? [],
+    sections: (sections.data ?? []).map((s) => ({
+      slug: s.slug,
+      name: s.name,
+      kind: s.kind,
+      subsections: (subsections.data ?? []).filter((x) => x.section_id === s.id).map((x) => ({ slug: x.slug, name: x.name })),
+    })),
     groups: groups.data ?? [],
     filters: (filters.data ?? []).map((f) => ({
       id: f.id,
@@ -52,6 +58,15 @@ export async function loadHubData(): Promise<HubData> {
 export async function findSection(slug: string): Promise<Section | null> {
   if (!SUPABASE_CONFIGURED) return SECTIONS.find((s) => s.slug === slug) ?? null;
   const sb = await supabaseServer();
-  const { data } = await sb.from("sections").select("slug, name, kind").eq("slug", slug).maybeSingle();
-  return data ?? null;
+  const { data } = await sb
+    .from("sections")
+    .select("slug, name, kind, subsections(slug, name, is_visible, sort_order)")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!data) return null;
+  const subs = (data.subsections ?? [])
+    .filter((x) => x.is_visible)
+    .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name))
+    .map((x) => ({ slug: x.slug, name: x.name }));
+  return { slug: data.slug, name: data.name, kind: data.kind, subsections: subs };
 }

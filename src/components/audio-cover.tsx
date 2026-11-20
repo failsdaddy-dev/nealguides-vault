@@ -1,8 +1,8 @@
 "use client";
 
-// Cover for audio cards: a gradient picked from the title (brand red mixed
-// with the placeholder tones), a music icon, the preview's waveform, a Play
-// button and the preview length (max 30 s). No YouTube thumbnail.
+// Cover for audio cards (HUD style): a dark panel with a green glow placed
+// from the title, grid lines, the preview's waveform, an angled Play button
+// and the preview length (max 30 s).
 
 import type { Card } from "@/lib/types";
 import { formatTime } from "./audio-player";
@@ -17,17 +17,17 @@ function hash(s: string): number {
 
 export function AudioCover({ card, onPlay, size = "card" }: { card: Card; onPlay: () => void; size?: "card" | "page" }) {
   const n = hash(card.title);
-  const angle = 110 + Math.round(n * 120);
-  const mix = 22 + Math.round(n * 38);
+  const x = 15 + Math.round(n * 70);
+  const mix = 16 + Math.round(n * 18);
   const big = size === "page";
   return (
     <div
-      className="absolute inset-0 flex flex-col justify-between p-4"
+      className="ng-card-ph absolute inset-0 flex flex-col justify-between p-4"
       style={{
-        background: `linear-gradient(${angle}deg, color-mix(in srgb, var(--brand) ${mix}%, var(--ph-a)), var(--ph-b) 70%)`,
+        backgroundImage: `radial-gradient(70% 90% at ${x}% 0%, color-mix(in srgb, var(--brand) ${mix}%, transparent), transparent 70%)`,
       }}
     >
-      <MusicIcon size={big ? 34 : 22} className="text-white/80" />
+      <MusicIcon size={big ? 30 : 20} className="text-brand" />
       <div className="flex flex-1 items-center justify-center">
         {card.audioPreview ? (
           <button
@@ -38,21 +38,21 @@ export function AudioCover({ card, onPlay, size = "card" }: { card: Card; onPlay
               onPlay();
             }}
             aria-label={`Play ${card.title}`}
-            className={`vh-press no-lift grid place-items-center rounded-full bg-brand text-brand-fg shadow-lg transition-transform duration-200 hover:scale-105 ${
-              big ? "size-20" : "size-14"
+            className={`vh-press ng-cut grid place-items-center bg-brand text-brand-fg transition-transform duration-200 hover:scale-105 ${
+              big ? "size-20 [--cut:14px]" : "size-14 [--cut:10px]"
             }`}
           >
             <PlayIcon size={big ? 34 : 26} />
           </button>
         ) : (
-          <span className="rounded-full bg-black/40 px-3 py-1 text-xs font-medium text-white/85">No audio yet</span>
+          <span className="ng-tag no-bar text-[10px] text-fg-2">No audio yet</span>
         )}
       </div>
       <div className="opacity-70">
         <Waveform peaks={card.audioPreview?.peaks ?? null} progress={0} height={big ? 44 : 26} bars={big ? 90 : 48} />
       </div>
       {card.audioPreview && (
-        <span className="absolute bottom-2 right-2 rounded bg-black/75 px-1 text-xs font-medium text-white">
+        <span className="absolute bottom-2 right-2 bg-black/75 px-1.5 py-0.5 font-display text-xs font-semibold tracking-[0.06em] text-white">
           {formatTime(Math.min(card.audioPreview.duration, 30))}
         </span>
       )}

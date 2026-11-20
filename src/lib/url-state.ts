@@ -1,5 +1,5 @@
 // URL <-> browse state. Format agreed in Phase 0 (Q14):
-//   /fc-gameplay-clips?f=fc-27&q=skill&sort=manual
+//   /fc-gameplay-clips?sub=shorts&f=fc-27&q=skill&sort=manual
 // Filter slugs are de-duplicated and sorted so the same selection always
 // produces the same shareable link.
 
@@ -11,6 +11,8 @@ const SORTS: readonly SortMode[] = ["newest", "manual", "relevance"];
 export const MAX_QUERY = 200;
 
 export interface UrlState {
+  /** Subsection slug within the section; absent = the section's full list. */
+  sub?: string;
   filters: string[];
   q: string;
   sort: SortMode;
@@ -23,7 +25,9 @@ export function parseUrlState(params: ParamsLike): UrlState {
   const q = (params.get("q") ?? "").trim().slice(0, MAX_QUERY);
   const rawSort = params.get("sort") as SortMode | null;
   const sort: SortMode = rawSort && SORTS.includes(rawSort) ? rawSort : q ? "relevance" : "newest";
-  return { filters, q, sort };
+  const rawSub = (params.get("sub") ?? "").trim().toLowerCase();
+  const sub = SLUG.test(rawSub) && rawSub.length <= 60 ? rawSub : undefined;
+  return sub ? { sub, filters, q, sort } : { filters, q, sort };
 }
 
 export function normalizeFilters(slugs: readonly string[]): string[] {
@@ -33,6 +37,7 @@ export function normalizeFilters(slugs: readonly string[]): string[] {
 
 export function buildQueryString(state: Partial<UrlState>): string {
   const params = new URLSearchParams();
+  if (state.sub && SLUG.test(state.sub)) params.set("sub", state.sub);
   const filters = normalizeFilters(state.filters ?? []);
   if (filters.length) params.set("f", filters.join(","));
   const q = (state.q ?? "").trim().slice(0, MAX_QUERY);

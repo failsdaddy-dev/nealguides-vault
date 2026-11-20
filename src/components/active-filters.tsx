@@ -104,16 +104,12 @@ export function ActiveFiltersTab({ mini }: { mini: boolean }) {
         aria-expanded={open}
         aria-label={`Active filters: ${count}`}
         onClick={() => (open ? setOpen(false) : show())}
-        className={
-          mini
-            ? "vh-nav flex w-full flex-col items-center gap-1.5 rounded-[10px] py-4 text-[10px] hover:bg-hover"
-            : "vh-nav flex h-10 w-full items-center gap-6 rounded-[10px] px-3 text-sm hover:bg-hover"
-        }
+        className={mini ? "ng-rail-link w-full" : "ng-nav-row ng-nav-link w-full"}
       >
-        <span className="relative">
-          <TuneIcon />
+        <span className="ng-nav-icon relative">
+          <TuneIcon size={18} />
           {count > 0 && (
-            <span className="absolute -right-2 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-brand px-1 text-[10px] font-medium text-brand-fg">
+            <span className="ng-cut absolute -right-1.5 -top-1.5 grid h-4 min-w-4 place-items-center bg-brand px-1 text-[10px] font-bold text-brand-fg [--cut:4px]">
               {count}
             </span>
           )}

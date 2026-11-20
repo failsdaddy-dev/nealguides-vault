@@ -1,90 +1,196 @@
 "use client";
 
-// Left guide: 240px full, 72px mini, or a slide-in drawer on small screens (R21, R25).
+// Left menu (HUD style). Full width on wide screens, icon rail on medium
+// screens, slide-in drawer on small ones. Sections and subsections come from
+// the database (Admin -> Sections), so whatever the admin creates shows here.
+// A section with subsections opens like a dropdown: "All <section>" first,
+// then each subsection (?sub=<slug>). The current section opens by itself.
 
 import Link from "next/link";
-import { useEffect, type CSSProperties } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useState, type CSSProperties } from "react";
 import { HOME_PATH } from "@/lib/brand";
-import { usePathname } from "next/navigation";
+import type { Section } from "@/lib/types";
 import { useCurrentSection } from "@/lib/use-browse-url";
 import { ActiveFilterList, ActiveFiltersTab } from "./active-filters";
 import { useHub } from "./hub-context";
-import { MenuIcon, SECTION_ICONS, ShieldIcon } from "./icons";
+import { ChevronDown, FolderIcon, MenuIcon, SECTION_ICONS, ShieldIcon } from "./icons";
 import { IconButton, Wordmark } from "./top-bar";
 
-function SectionLinks({ mini, onNavigate }: { mini: boolean; onNavigate?: () => void }) {
-  const { sections } = useHub();
+function SectionIcon({ kind }: { kind: Section["kind"] }) {
+  const Icon = SECTION_ICONS[kind] ?? FolderIcon;
+  return <Icon size={18} />;
+}
+
+function SectionItem({ s, i, onNavigate }: { s: Section; i: number; onNavigate?: () => void }) {
   const current = useCurrentSection();
+  const params = useSearchParams();
+  const active = current === s.slug;
+  const sub = active ? params.get("sub") : null;
+  const subs = s.subsections ?? [];
+  const [open, setOpen] = useState(active);
+
+  // Opening a section from anywhere (link, back button) unfolds it here too.
+  const [wasActive, setWasActive] = useState(active);
+  if (wasActive !== active) {
+    setWasActive(active);
+    if (active) setOpen(true);
+  }
+
+  const panelId = `subnav-${s.slug}`;
   return (
-    <nav aria-label="Sections" className="flex flex-col gap-0.5">
-      {sections.map((s, i) => {
-        const Icon = SECTION_ICONS[s.kind];
-        const active = current === s.slug;
-        return (
-          <Link
-            key={s.slug}
-            href={`/${s.slug}`}
-            onClick={onNavigate}
-            aria-current={active ? "page" : undefined}
-            style={{ "--i": i } as CSSProperties}
-            className={
-              mini
-                ? `vh-nav flex flex-col items-center gap-1.5 rounded-[10px] py-4 text-[10px] hover:bg-hover ${active ? "font-medium" : ""}`
-                : `vh-nav flex h-10 items-center gap-6 rounded-[10px] px-3 text-sm hover:bg-hover ${
-                    active ? "bg-chip font-medium hover:bg-chip-hover" : ""
-                  }`
-            }
+    <li style={{ "--i": i } as CSSProperties} className="ng-nav-item">
+      <div className="ng-nav-row" data-active={active ? "" : undefined}>
+        <Link
+          href={`/${s.slug}`}
+          onClick={() => {
+            if (subs.length) setOpen(true);
+            onNavigate?.();
+          }}
+          aria-current={active && !sub ? "page" : undefined}
+          className="ng-nav-link"
+        >
+          <span className="ng-nav-icon">
+            <SectionIcon kind={s.kind} />
+          </span>
+          <span className="min-w-0 flex-1 truncate">{s.name}</span>
+        </Link>
+        {subs.length > 0 && (
+          <button
+            type="button"
+            className="ng-nav-toggle"
+            aria-expanded={open}
+            aria-controls={panelId}
+            aria-label={`${open ? "Close" : "Open"} ${s.name} subsections`}
+            onClick={() => setOpen((v) => !v)}
           >
-            <Icon />
-            <span className={mini ? "max-w-full truncate px-1" : "truncate"}>{s.name}</span>
-          </Link>
-        );
-      })}
-    </nav>
+            <ChevronDown size={16} className="ng-nav-chevron" />
+          </button>
+        )}
+      </div>
+
+      {subs.length > 0 && (
+        <div id={panelId} className="ng-subnav" data-open={open ? "" : undefined} inert={!open}>
+          <div className="min-h-0 overflow-hidden">
+            <ul className="ng-subnav-list">
+              <li>
+                <Link
+                  href={`/${s.slug}`}
+                  onClick={onNavigate}
+                  aria-current={active && !sub ? "page" : undefined}
+                  className="ng-subnav-link"
+                >
+                  All {s.name.toLowerCase()}
+                </Link>
+              </li>
+              {subs.map((x) => (
+                <li key={x.slug}>
+                  <Link
+                    href={`/${s.slug}?sub=${x.slug}`}
+                    onClick={onNavigate}
+                    aria-current={active && sub === x.slug ? "page" : undefined}
+                    className="ng-subnav-link"
+                  >
+                    {x.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+    </li>
   );
 }
 
-function AdminLink({ mini, onNavigate }: { mini: boolean; onNavigate?: () => void }) {
+function AdminItem({ mini, onNavigate }: { mini: boolean; onNavigate?: () => void }) {
   const { user } = useHub();
   const pathname = usePathname();
   if (user.role !== "admin") return null;
   const active = pathname === "/admin" || pathname.startsWith("/admin/");
+  if (mini) {
+    return (
+      <Link href="/admin" aria-current={active ? "page" : undefined} className="ng-rail-link" data-active={active ? "" : undefined}>
+        <span className="ng-nav-icon">
+          <ShieldIcon size={18} />
+        </span>
+        <span className="max-w-full truncate px-1">Admin</span>
+      </Link>
+    );
+  }
   return (
-    <Link
-      href="/admin"
-      onClick={onNavigate}
-      aria-current={active ? "page" : undefined}
-      style={{ "--i": 7 } as CSSProperties}
-      className={
-        mini
-          ? `vh-nav flex flex-col items-center gap-1.5 rounded-[10px] py-4 text-[10px] hover:bg-hover ${active ? "font-medium" : ""}`
-          : `vh-nav flex h-10 items-center gap-6 rounded-[10px] px-3 text-sm hover:bg-hover ${active ? "bg-chip font-medium hover:bg-chip-hover" : ""}`
-      }
-    >
-      <ShieldIcon />
-      <span>Admin</span>
-    </Link>
+    <div className="ng-nav-row" data-active={active ? "" : undefined}>
+      <Link href="/admin" onClick={onNavigate} aria-current={active ? "page" : undefined} className="ng-nav-link">
+        <span className="ng-nav-icon">
+          <ShieldIcon size={18} />
+        </span>
+        <span className="flex-1">Admin panel</span>
+      </Link>
+    </div>
   );
 }
 
 function FullGuideBody({ onNavigate, inline }: { onNavigate?: () => void; inline?: boolean }) {
+  const { sections, user } = useHub();
   return (
-    <div className="flex flex-col px-3 pb-6 pt-4">
-      <p className="ng-tag px-3 pb-3">Vault</p>
-      <SectionLinks mini={false} onNavigate={onNavigate} />
-      <hr className="my-3 border-line" />
+    <div className="flex flex-col px-3 pb-6 pt-5">
+      <p className="ng-tag px-2 pb-3">Vault</p>
+      <nav aria-label="Sections">
+        <ul className="flex flex-col gap-1">
+          {sections.map((s, i) => (
+            <SectionItem key={s.slug} s={s} i={i} onNavigate={onNavigate} />
+          ))}
+        </ul>
+      </nav>
+
+      <p className="ng-tag mt-6 px-2 pb-3">Tools</p>
       {inline ? (
         // Touch drawer: no hover, so the list is shown in place.
-        <div>
-          <p className="px-3 pb-2 text-base font-medium">Active filters</p>
+        <div className="px-2">
+          <p className="pb-2 font-display text-sm font-semibold uppercase tracking-[0.12em] text-fg-2">Active filters</p>
           <ActiveFilterList />
         </div>
       ) : (
         <ActiveFiltersTab mini={false} />
       )}
-      <hr className="my-3 border-line" />
-      <AdminLink mini={false} onNavigate={onNavigate} />
+      {user.role === "admin" && (
+        <div className="mt-1">
+          <AdminItem mini={false} onNavigate={onNavigate} />
+        </div>
+      )}
     </div>
+  );
+}
+
+function MiniRail() {
+  const { sections } = useHub();
+  const current = useCurrentSection();
+  return (
+    <>
+      <nav aria-label="Sections" className="flex flex-col gap-1">
+        {sections.map((s) => {
+          const active = current === s.slug;
+          return (
+            <Link
+              key={s.slug}
+              href={`/${s.slug}`}
+              aria-current={active ? "page" : undefined}
+              data-active={active ? "" : undefined}
+              title={s.name}
+              className="ng-rail-link"
+            >
+              <span className="ng-nav-icon">
+                <SectionIcon kind={s.kind} />
+              </span>
+              <span className="max-w-full truncate px-1">{s.name}</span>
+            </Link>
+          );
+        })}
+      </nav>
+      <hr className="mx-2 my-2 border-line" />
+      <ActiveFiltersTab mini />
+      <AdminItem mini />
+    </>
   );
 }
 
@@ -108,24 +214,22 @@ export function Guide() {
     <>
       {guideMode === "full" && (
         <aside
-          aria-label="Guide"
-          className="vh-fade-in fixed bottom-0 left-0 top-14 z-30 w-[var(--guide-full)] overflow-y-auto overscroll-contain border-r border-line bg-bg [scrollbar-width:thin]"
+          aria-label="Menu"
+          className="ng-guide vh-fade-in fixed bottom-0 left-0 top-14 z-30 w-[var(--guide-full)] overflow-y-auto overscroll-contain"
         >
           <FullGuideBody />
         </aside>
       )}
       {guideMode === "mini" && (
         <aside
-          aria-label="Guide"
-          className="vh-fade-in fixed bottom-0 left-0 top-14 z-30 flex w-[var(--guide-mini)] flex-col gap-0.5 border-r border-line bg-bg px-1 pt-1"
+          aria-label="Menu"
+          className="ng-guide vh-fade-in fixed bottom-0 left-0 top-14 z-30 flex w-[var(--guide-mini)] flex-col px-1.5 pt-3"
         >
-          <SectionLinks mini />
-          <ActiveFiltersTab mini />
-          <AdminLink mini />
+          <MiniRail />
         </aside>
       )}
 
-      {/* Drawer (narrow screens, or mini mode's hamburger). Always mounted so it can animate. */}
+      {/* Drawer (narrow screens). Always mounted so it can animate. */}
       <div className={`fixed inset-0 z-50 ${drawerOpen ? "" : "pointer-events-none"}`} aria-hidden={!drawerOpen}>
         <div
           onClick={() => setDrawerOpen(false)}
@@ -134,18 +238,18 @@ export function Guide() {
           }`}
         />
         <aside
-          aria-label="Guide"
+          aria-label="Menu"
           inert={!drawerOpen}
-          className={`absolute inset-y-0 left-0 w-[var(--guide-full)] overflow-y-auto bg-bg shadow-2xl transition-transform duration-[var(--dur-3)] ease-[var(--ease)] ${
+          className={`ng-guide absolute inset-y-0 left-0 w-[var(--guide-full)] overflow-y-auto shadow-2xl transition-transform duration-[var(--dur-3)] ease-[var(--ease)] ${
             drawerOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
-          <div className="flex h-14 items-center gap-2 px-4">
+          <div className="ng-hud-line flex h-14 items-center gap-2 border-b border-line px-3">
             <IconButton label="Close menu" onClick={toggleGuide}>
               <MenuIcon />
             </IconButton>
-            <Link href={HOME_PATH} className="rounded-md px-2 py-1">
-              <Wordmark />
+            <Link href={HOME_PATH} className="rounded-md px-1 py-1">
+              <Wordmark size={28} />
             </Link>
           </div>
           <FullGuideBody inline onNavigate={() => setDrawerOpen(false)} />

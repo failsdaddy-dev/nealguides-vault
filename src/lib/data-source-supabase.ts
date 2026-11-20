@@ -83,8 +83,11 @@ export const supabaseSource: DataSource = {
     };
   },
 
-  async filterCounts(section) {
-    const [map, res] = await Promise.all([filterSlugs(), supabaseBrowser().rpc("filter_counts", { p_section: section })]);
+  async filterCounts(section, sub) {
+    const [map, res] = await Promise.all([
+      filterSlugs(),
+      supabaseBrowser().rpc("filter_counts", { p_section: section, p_sub: sub || undefined }),
+    ]);
     if (res.error) throw res.error;
     const out: Record<string, number> = {};
     for (const row of res.data ?? []) {

@@ -26,9 +26,7 @@ function Chip({
       aria-pressed={on}
       aria-label={label}
       onClick={onClick}
-      className={`vh-press flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-sm font-medium ${
-        on ? "bg-chip-on-bg text-chip-on-fg" : "bg-chip hover:bg-chip-hover"
-      }`}
+      className="ng-filter vh-press shrink-0"
     >
       {children}
     </button>
@@ -66,9 +64,9 @@ export function ChipBar({ counts }: { counts: Record<string, number> }) {
   };
 
   return (
-    <div className="sticky top-14 z-20 bg-bg">
+    <div className="sticky top-14 z-20 border-b border-line bg-bg/92 backdrop-blur">
       <div className="relative">
-        <div ref={row} className="no-scrollbar -mx-1 flex gap-3 overflow-x-auto px-1 py-3" role="toolbar" aria-label="Filters">
+        <div ref={row} className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 py-3" role="toolbar" aria-label="Filters">
           <Chip on={state.filters.length === 0} onClick={clearFilters}>
             All
           </Chip>
