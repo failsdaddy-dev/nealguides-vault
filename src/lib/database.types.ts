@@ -96,9 +96,9 @@ export type Database = {
         Row: {
           card_id: string
           created_at: string
-          id: string
           host: string
           host_name: string
+          id: string
           kind: Database["public"]["Enums"]["link_kind"]
           label: string
           sort_order: number
@@ -150,8 +150,8 @@ export type Database = {
           loom_url: string | null
           media_type: Database["public"]["Enums"]["media_type"]
           preview_clip: Json | null
-          preview_image: Json | null
           preview_end: number | null
+          preview_image: Json | null
           preview_start: number
           published_at: string | null
           search_tsv: unknown
@@ -178,8 +178,8 @@ export type Database = {
           loom_url?: string | null
           media_type?: Database["public"]["Enums"]["media_type"]
           preview_clip?: Json | null
-          preview_image?: Json | null
           preview_end?: number | null
+          preview_image?: Json | null
           preview_start?: number
           published_at?: string | null
           search_tsv?: unknown
@@ -206,8 +206,8 @@ export type Database = {
           loom_url?: string | null
           media_type?: Database["public"]["Enums"]["media_type"]
           preview_clip?: Json | null
-          preview_image?: Json | null
           preview_end?: number | null
+          preview_image?: Json | null
           preview_start?: number
           published_at?: string | null
           search_tsv?: unknown
