@@ -336,9 +336,37 @@ export type Database = {
         }
         Relationships: []
       }
+      section_groups: {
+        Row: {
+          created_at: string
+          id: string
+          is_visible: boolean
+          name: string
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          name: string
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          name?: string
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       sections: {
         Row: {
           created_at: string
+          group_id: string
           id: string
           is_visible: boolean
           kind: Database["public"]["Enums"]["section_kind"]
@@ -348,6 +376,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          group_id?: string
           id?: string
           is_visible?: boolean
           kind: Database["public"]["Enums"]["section_kind"]
@@ -357,6 +386,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          group_id?: string
           id?: string
           is_visible?: boolean
           kind?: Database["public"]["Enums"]["section_kind"]
@@ -364,7 +394,15 @@ export type Database = {
           slug?: string
           sort_order?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sections_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "section_groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subsections: {
         Row: {

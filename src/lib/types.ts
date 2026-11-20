@@ -49,6 +49,14 @@ export interface Section {
   name: string;
   kind: SectionKind;
   subsections?: Subsection[];
+  /** The sidebar group this section sits in (e.g. "vault"). */
+  groupSlug?: string;
+}
+
+/** Top-level button in the side menu (e.g. "Vault"); opens its sections. */
+export interface SidebarGroup {
+  slug: string;
+  name: string;
 }
 
 export interface FilterGroup {

@@ -16,7 +16,7 @@ declare
   u_restricted uuid := gen_random_uuid();
   u_disabled uuid := gen_random_uuid();
   u_expired uuid := gen_random_uuid();
-  sec2 uuid; sub1 uuid; sub_hidden uuid; l3 uuid;
+  sec2 uuid; sub1 uuid; sub_hidden uuid; l3 uuid; grp_hidden uuid; sec_hidden_grp uuid;
   sec uuid; g_client uuid; g_style uuid;
   f_ped uuid; f_cartoon uuid; f_fc20 uuid;
   c1 uuid; c2 uuid; c3 uuid; l1 uuid; l2 uuid;
@@ -117,6 +117,16 @@ begin
   exception when foreign_key_violation then ok := true; end;
   names := array_append(names, ('a card cannot use a subsection of another section')::text); oks := array_append(oks, (ok)::boolean);
 
+  -- ------------------------------------------- Neal Guides: sidebar groups
+  select count(*) into n from public.sections where id = sec and group_id is not null;
+  names := array_append(names, ('a new section without a group gets the first group')::text); oks := array_append(oks, ((n = 1))::boolean);
+  insert into public.section_groups (slug, name, is_visible) values ('zz-hidden-grp', 'Zz hidden group', false) returning id into grp_hidden;
+  insert into public.sections (slug, name, kind, group_id) values ('zz-test-sec3', 'Zz test 3', 'effect', grp_hidden) returning id into sec_hidden_grp;
+  begin
+    delete from public.section_groups where id = grp_hidden; ok := false;
+  exception when foreign_key_violation then ok := true; end;
+  names := array_append(names, ('a group that still has sections cannot be deleted')::text); oks := array_append(oks, (ok)::boolean);
+
   -- --------------------------------------------------------------- anon
   begin
     execute 'set local role anon';
@@ -134,6 +144,14 @@ begin
   end;
   execute 'reset role';
   names := array_append(names, ('anon cannot read subsections')::text); oks := array_append(oks, (ok)::boolean);
+  begin
+    execute 'set local role anon';
+    perform 1 from public.section_groups limit 1;
+    ok := false;
+  exception when insufficient_privilege then ok := true;
+  end;
+  execute 'reset role';
+  names := array_append(names, ('anon cannot read sidebar groups')::text); oks := array_append(oks, (ok)::boolean);
   begin
     execute 'set local role anon';
     perform * from public.browse_cards();
@@ -170,6 +188,12 @@ begin
   names := array_append(names, (format('editor sees visible subsections only (got %s, want 1)', n))::text); oks := array_append(oks, ((n = 1))::boolean);
   select count(*) into n from public.card_links where card_id = c2 and host = 'google-drive';
   names := array_append(names, ('editor can read link host badges')::text); oks := array_append(oks, ((n = 1))::boolean);
+  select count(*) into n from public.section_groups where id = grp_hidden;
+  names := array_append(names, ('editor cannot see a hidden group')::text); oks := array_append(oks, ((n = 0))::boolean);
+  select count(*) into n from public.sections where id = sec_hidden_grp;
+  names := array_append(names, ('editor cannot see a section inside a hidden group')::text); oks := array_append(oks, ((n = 0))::boolean);
+  select count(*) into n from public.section_groups where slug = 'vault';
+  names := array_append(names, ('editor sees the visible Vault group')::text); oks := array_append(oks, ((n = 1))::boolean);
   execute 'reset role';
 
   -- --------------------------------------------------- restricted (PED only)
@@ -239,6 +263,11 @@ begin
   exception when insufficient_privilege then ok := true; end;
   execute 'reset role'; names := array_append(names, ('editor cannot create subsections')::text); oks := array_append(oks, (ok)::boolean);
 
+  begin execute 'set local role authenticated';
+    insert into public.section_groups (slug, name) values ('zz-hack-grp', 'Zz hack'); ok := false;
+  exception when insufficient_privilege then ok := true; end;
+  execute 'reset role'; names := array_append(names, ('editor cannot create sidebar groups')::text); oks := array_append(oks, (ok)::boolean);
+
   begin execute 'set local role authenticated'; perform public.admin_set_card_filters(c1, array[f_ped]); ok := false;
   exception when insufficient_privilege then ok := true; end;
   execute 'reset role'; names := array_append(names, ('editor cannot call admin_set_card_filters')::text); oks := array_append(oks, (ok)::boolean);
@@ -289,6 +318,11 @@ begin
   perform public.admin_reorder('subsections', array[sub_hidden, sub1]);
   select count(*) into n from public.subsections where (id = sub_hidden and sort_order = 10) or (id = sub1 and sort_order = 20);
   names := array_append(names, ('admin_reorder orders subsections')::text); oks := array_append(oks, ((n = 2))::boolean);
+  select count(*) into n from public.sections where id = sec_hidden_grp;
+  names := array_append(names, ('admin sees sections in hidden groups')::text); oks := array_append(oks, ((n = 1))::boolean);
+  perform public.admin_reorder('section_groups', array[grp_hidden]);
+  select count(*) into n from public.section_groups where id = grp_hidden and sort_order = 10;
+  names := array_append(names, ('admin_reorder orders sidebar groups')::text); oks := array_append(oks, ((n = 1))::boolean);
   execute 'reset role';
   select count(*) into n from public.audit_log where actor_id = u_admin and action = 'admin_cards_create';
   names := array_append(names, ('admin creating a card is audited')::text); oks := array_append(oks, ((n = 1))::boolean);

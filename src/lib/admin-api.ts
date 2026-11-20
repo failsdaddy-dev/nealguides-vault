@@ -10,6 +10,7 @@ type Tables = Database["public"]["Tables"];
 export type CardRow = Tables["cards"]["Row"];
 export type SectionRow = Tables["sections"]["Row"];
 export type SubsectionRow = Tables["subsections"]["Row"];
+export type SidebarGroupRow = Tables["section_groups"]["Row"];
 export type GroupRow = Tables["filter_groups"]["Row"];
 export type FilterRow = Tables["filters"]["Row"];
 export type ProfileRow = Tables["profiles"]["Row"];
@@ -225,7 +226,10 @@ export async function setCardStatus(id: string, status: CardRow["status"]) {
   check(await sb().from("cards").update({ status }).eq("id", id));
 }
 
-export async function reorder(kind: "cards" | "sections" | "subsections" | "filter_groups" | "filters", ids: string[]) {
+export async function reorder(
+  kind: "cards" | "section_groups" | "sections" | "subsections" | "filter_groups" | "filters",
+  ids: string[],
+) {
   check(await sb().rpc("admin_reorder", { p_kind: kind, p_ids: ids }));
 }
 
@@ -258,7 +262,7 @@ export async function mergeFilters(fromId: string, intoId: string) {
 }
 
 // --------------------------------------------------------------- sections
-export async function createSection(input: Pick<SectionRow, "name" | "slug" | "kind">) {
+export async function createSection(input: Pick<SectionRow, "name" | "slug" | "kind"> & { group_id?: string }) {
   check(await sb().from("sections").insert(input));
 }
 export async function updateSection(id: string, patch: Partial<SectionRow>) {
@@ -266,6 +270,29 @@ export async function updateSection(id: string, patch: Partial<SectionRow>) {
 }
 export async function deleteSection(id: string) {
   check(await sb().from("sections").delete().eq("id", id));
+}
+
+// ---------------------------------------------------------- sidebar groups
+// Top-level side-menu buttons (e.g. "Vault"). Each section belongs to one.
+
+/** Empty list (not an error) until the sidebar-groups migration has run. */
+export async function listSidebarGroups(): Promise<SidebarGroupRow[]> {
+  const res = await sb().from("section_groups").select("*").order("sort_order").order("name");
+  if (res.error) {
+    if (/section_groups|schema cache|does not exist/i.test(res.error.message)) return [];
+    throw new Error(res.error.message);
+  }
+  return res.data ?? [];
+}
+export async function createSidebarGroup(name: string, slug: string) {
+  check(await sb().from("section_groups").insert({ name, slug }));
+}
+export async function updateSidebarGroup(id: string, patch: Partial<Pick<SidebarGroupRow, "name" | "slug" | "is_visible">>) {
+  check(await sb().from("section_groups").update(patch).eq("id", id));
+}
+/** Refused by the database while the group still has sections. */
+export async function deleteSidebarGroup(id: string) {
+  check(await sb().from("section_groups").delete().eq("id", id));
 }
 
 // ------------------------------------------------------------ subsections

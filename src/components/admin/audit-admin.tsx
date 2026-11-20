@@ -23,6 +23,8 @@ const ACTIONS: { value: string; label: string }[] = [
   { value: "admin_cards_publish", label: "Cards published" },
   { value: "admin_cards_unpublish", label: "Cards unpublished" },
   { value: "admin_cards_delete", label: "Cards deleted" },
+  { value: "admin_section_groups_create", label: "Sidebar groups created" },
+  { value: "admin_section_groups_delete", label: "Sidebar groups deleted" },
   { value: "admin_sections_create", label: "Sections created" },
   { value: "admin_sections_delete", label: "Sections deleted" },
   { value: "admin_subsections_create", label: "Subsections created" },
@@ -30,9 +32,10 @@ const ACTIONS: { value: string; label: string }[] = [
   { value: "preview_deleted", label: "Preview files deleted" },
 ];
 
-const CONTENT_ACTION = /^admin_(cards|sections|subsections|filter_groups|filters)_(create|delete|publish|unpublish)$/;
+const CONTENT_ACTION = /^admin_(cards|section_groups|sections|subsections|filter_groups|filters)_(create|delete|publish|unpublish)$/;
 const NOUN: Record<string, string> = {
   cards: "card",
+  section_groups: "sidebar group",
   sections: "section",
   subsections: "subsection",
   filter_groups: "tag group",

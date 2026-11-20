@@ -1,16 +1,19 @@
 "use client";
 
 // Left menu (HUD style). Full width on wide screens, icon rail on medium
-// screens, slide-in drawer on small ones. Sections and subsections come from
-// the database (Admin -> Sections), so whatever the admin creates shows here.
-// A section with subsections opens like a dropdown: "All <section>" first,
-// then each subsection (?sub=<slug>). The current section opens by itself.
+// screens, slide-in drawer on small ones. Three levels, all from the database
+// and managed only in Admin -> Sections:
+//   Group (e.g. "Vault")  -> a button; tapping it opens its sections
+//   Section (e.g. Effects) -> a page; with subsections it has its own dropdown
+//   Subsection (e.g. Shorts) -> ?sub=<slug>
+// No limit on how many of each. The group and section you are in open by
+// themselves.
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState, type CSSProperties } from "react";
 import { HOME_PATH } from "@/lib/brand";
-import type { Section } from "@/lib/types";
+import type { Section, SidebarGroup } from "@/lib/types";
 import { useCurrentSection } from "@/lib/use-browse-url";
 import { ActiveFilterList, ActiveFiltersTab } from "./active-filters";
 import { useHub } from "./hub-context";
@@ -103,6 +106,61 @@ function SectionItem({ s, i, onNavigate }: { s: Section; i: number; onNavigate?:
   );
 }
 
+function GroupItem({
+  g,
+  sections,
+  index,
+  onNavigate,
+}: {
+  g: SidebarGroup;
+  sections: Section[];
+  index: number;
+  onNavigate?: () => void;
+}) {
+  const current = useCurrentSection();
+  const holdsCurrent = sections.some((s) => s.slug === current);
+  const [open, setOpen] = useState(holdsCurrent);
+
+  // Navigating into one of this group's sections unfolds the group.
+  const [had, setHad] = useState(holdsCurrent);
+  if (had !== holdsCurrent) {
+    setHad(holdsCurrent);
+    if (holdsCurrent) setOpen(true);
+  }
+
+  const panelId = `group-${g.slug}`;
+  return (
+    <li className="ng-nav-item" style={{ "--i": index } as CSSProperties}>
+      <button
+        type="button"
+        className="ng-group-row"
+        data-current={holdsCurrent ? "" : undefined}
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span className="ng-group-mark" aria-hidden="true" />
+        <span className="min-w-0 flex-1 truncate text-left">{g.name}</span>
+        <span className="ng-group-count">{sections.length}</span>
+        <ChevronDown size={16} className="ng-nav-chevron" />
+      </button>
+      <div id={panelId} className="ng-subnav" data-open={open ? "" : undefined} inert={!open}>
+        <div className="min-h-0 overflow-hidden">
+          {sections.length ? (
+            <ul className="ng-group-list">
+              {sections.map((s, i) => (
+                <SectionItem key={s.slug} s={s} i={i} onNavigate={onNavigate} />
+              ))}
+            </ul>
+          ) : (
+            <p className="ng-group-list py-2 pl-5 text-xs text-fg-2">No sections yet.</p>
+          )}
+        </div>
+      </div>
+    </li>
+  );
+}
+
 function AdminItem({ mini, onNavigate }: { mini: boolean; onNavigate?: () => void }) {
   const { user } = useHub();
   const pathname = usePathname();
@@ -131,14 +189,21 @@ function AdminItem({ mini, onNavigate }: { mini: boolean; onNavigate?: () => voi
 }
 
 function FullGuideBody({ onNavigate, inline }: { onNavigate?: () => void; inline?: boolean }) {
-  const { sections, user } = useHub();
+  const { sidebarGroups, sections, user } = useHub();
+  // Sections whose group is hidden or unknown don't show (the admin hid the group).
   return (
     <div className="flex flex-col px-3 pb-6 pt-5">
-      <p className="ng-tag px-2 pb-3">Vault</p>
-      <nav aria-label="Sections">
-        <ul className="flex flex-col gap-1">
-          {sections.map((s, i) => (
-            <SectionItem key={s.slug} s={s} i={i} onNavigate={onNavigate} />
+      <p className="ng-tag px-2 pb-3">Library</p>
+      <nav aria-label="Library">
+        <ul className="flex flex-col gap-2">
+          {sidebarGroups.map((g, i) => (
+            <GroupItem
+              key={g.slug}
+              g={g}
+              index={i}
+              sections={sections.filter((s) => s.groupSlug === g.slug)}
+              onNavigate={onNavigate}
+            />
           ))}
         </ul>
       </nav>

@@ -6,11 +6,12 @@
 import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { setDataSource } from "@/lib/data-source";
 import { supabaseSource } from "@/lib/data-source-supabase";
-import type { CurrentUser, Filter, FilterGroup, Section } from "@/lib/types";
+import type { CurrentUser, Filter, FilterGroup, Section, SidebarGroup } from "@/lib/types";
 
 export type GuideMode = "full" | "mini" | "none";
 
 interface HubValue {
+  sidebarGroups: SidebarGroup[];
   sections: Section[];
   groups: FilterGroup[];
   filters: Filter[];
@@ -44,6 +45,7 @@ function useMedia(query: string, fallback: boolean) {
 }
 
 export function HubProvider({
+  sidebarGroups,
   sections,
   groups,
   filters,
@@ -51,6 +53,7 @@ export function HubProvider({
   sampleMode,
   children,
 }: {
+  sidebarGroups: SidebarGroup[];
   sections: Section[];
   groups: FilterGroup[];
   filters: Filter[];
@@ -79,6 +82,7 @@ export function HubProvider({
 
   const value = useMemo<HubValue>(
     () => ({
+      sidebarGroups,
       sections,
       groups,
       filters,
@@ -90,7 +94,7 @@ export function HubProvider({
       drawerOpen,
       setDrawerOpen,
     }),
-    [sections, groups, filters, user, sampleMode, guideMode, toggleGuide, drawerOpen, setDrawerOpen],
+    [sidebarGroups, sections, groups, filters, user, sampleMode, guideMode, toggleGuide, drawerOpen, setDrawerOpen],
   );
 
   return <HubContext value={value}>{children}</HubContext>;

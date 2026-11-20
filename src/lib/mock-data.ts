@@ -2,13 +2,15 @@
 // neutral placeholders, not real Neal Guides assets. Production never shows
 // them: the proxy refuses to serve without Supabase settings.
 
-import type { Card, Filter, FilterGroup, LinkLabel, Section } from "./types";
+import type { Card, Filter, FilterGroup, LinkLabel, Section, SidebarGroup } from "./types";
+
+export const SIDEBAR_GROUPS: SidebarGroup[] = [{ slug: "vault", name: "Vault" }];
 
 export const SECTIONS: Section[] = [
-  { slug: "fc-gameplay-clips", name: "FC Gameplay Clips", kind: "gameplay", subsections: [{ slug: "shorts", name: "Shorts" }] },
-  { slug: "effects", name: "Effects", kind: "effect" },
-  { slug: "music", name: "Music", kind: "music" },
-  { slug: "backgrounds", name: "Backgrounds", kind: "background" },
+  { slug: "fc-gameplay-clips", name: "FC Gameplay Clips", kind: "gameplay", groupSlug: "vault", subsections: [{ slug: "shorts", name: "Shorts" }] },
+  { slug: "effects", name: "Effects", kind: "effect", groupSlug: "vault" },
+  { slug: "music", name: "Music", kind: "music", groupSlug: "vault" },
+  { slug: "backgrounds", name: "Backgrounds", kind: "background", groupSlug: "vault" },
 ];
 
 export const FILTER_GROUPS: FilterGroup[] = [

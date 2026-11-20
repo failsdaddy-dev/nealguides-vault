@@ -43,7 +43,7 @@
   --danger: #ff7a7a;
 
   --header-h: 60px;
-  --guide-full: 248px;
+  --guide-full: 284px;
   --guide-mini: 76px;
   --radius-chip: 4px;
   --radius-thumb: 6px;
@@ -598,7 +598,11 @@ select {
 .ng-glow { text-shadow: 0 0 28px color-mix(in srgb, var(--green) 45%, transparent); }
 
 /* Header underline: a thin green line fading out to the sides. */
-.ng-hud-line { position: relative; }
+/* Position in a layer so fixed/sticky utilities on the same element win
+   (an unlayered position here made the fixed top bar scroll away). */
+@layer components {
+  .ng-hud-line { position: relative; }
+}
 .ng-hud-line::after {
   content: "";
   position: absolute;
@@ -766,9 +770,9 @@ select {
   gap: 12px;
   padding: 6px 8px;
   font-family: var(--font-heading), "Chakra Petch", sans-serif;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   color: var(--fg-2);
   transition: color var(--dur-2) var(--ease);
@@ -821,6 +825,72 @@ select {
 .ng-nav-toggle:hover { color: var(--green); background: var(--hover); }
 .ng-nav-chevron { transition: transform var(--dur-3) var(--ease); }
 .ng-nav-toggle[aria-expanded="true"] .ng-nav-chevron { transform: rotate(180deg); color: var(--green); }
+
+/* Group button (top level, e.g. VAULT): opens its sections as a tree. */
+.ng-group-row {
+  display: flex;
+  width: 100%;
+  min-height: 46px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px 0 12px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-elev-2) 80%, transparent), var(--bg-elev));
+  font-family: var(--font-heading), "Chakra Petch", sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  transition: border-color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease);
+}
+.ng-group-row:hover { border-color: color-mix(in srgb, var(--green) 55%, var(--line)); }
+.ng-group-row[aria-expanded="true"] {
+  border-color: color-mix(in srgb, var(--green) 45%, var(--line));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--green) 14%, transparent), var(--bg-elev) 85%);
+}
+.ng-group-row:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--fg); }
+.ng-group-mark {
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+  background: var(--navy-2);
+  transform: rotate(45deg);
+  transition: background-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+.ng-group-row[aria-expanded="true"] .ng-group-mark,
+.ng-group-row[data-current] .ng-group-mark { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.ng-group-count {
+  min-width: 22px;
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  color: var(--fg-2);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+.ng-group-row[aria-expanded="true"] .ng-nav-chevron { transform: rotate(180deg); color: var(--green); }
+/* The tree: a rail on the left with a tick to each section. */
+.ng-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0 4px 16px;
+  padding-left: 12px;
+  border-left: 1px solid var(--line);
+}
+.ng-group-list > .ng-nav-item { position: relative; }
+.ng-group-list > .ng-nav-item::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 22px;
+  width: 11px;
+  height: 1px;
+  background: var(--line);
+}
+.ng-group-list > .ng-nav-item:has([data-active])::before { background: var(--green); box-shadow: 0 0 6px var(--green); }
 
 /* Subsection dropdown: animated open/close. */
 .ng-subnav {

@@ -11,7 +11,7 @@ const TABS = [
   { href: "/admin", label: "Overview" },
   { href: "/admin/cards", label: "Cards" },
   { href: "/admin/filters", label: "Filters" },
-  { href: "/admin/sections", label: "Sections" },
+  { href: "/admin/sections", label: "Side menu" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/audit", label: "Audit log" },
 ];

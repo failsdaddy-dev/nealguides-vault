@@ -1,30 +1,38 @@
 "use client";
 
-// Sections: add, edit (name, link, type), reorder, show/hide, delete.
-// Subsections are managed below the table (subsections-admin.tsx).
+// The side menu, all editable here (admin only; the database refuses
+// anyone else):
+//   Sidebar groups (top-level buttons, e.g. Vault)   -> sidebar-groups-admin.tsx
+//   Sections: add, edit (name, link, type, group), reorder, show/hide, delete
+//   Subsections inside each section                  -> subsections-admin.tsx
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import {
   createSection,
   deleteSection,
+  listSidebarGroups,
   loadTaxonomy,
   reorder,
   slugify,
   updateSection,
   type SectionRow,
+  type SidebarGroupRow,
   type SubsectionRow,
 } from "@/lib/admin-api";
 import type { SectionKind } from "@/lib/types";
 import { useToast } from "../toast";
+import { SidebarGroupsAdmin } from "./sidebar-groups-admin";
 import { SubsectionsAdmin } from "./subsections-admin";
 import { AdminFrame, Button, ConfirmButton, ErrorNote, Input, Panel, Select, Switch, TABLE } from "./ui";
 
+// The type only sets the card buttons, default preview and icon; the name
+// is free, so any kind of section can be made (e.g. Tweet videos, Reels).
 const KINDS: { value: SectionKind; label: string }[] = [
-  { value: "gameplay", label: "Gameplay clips (Project files + Download video)" },
-  { value: "effect", label: "Effects (Project files + Download video)" },
-  { value: "music", label: "Music (Open on platform + Download audio)" },
-  { value: "background", label: "Backgrounds (Project files + Download video)" },
+  { value: "gameplay", label: "Video clips (gameplay, Shorts, Reels... · Project files + Download)" },
+  { value: "effect", label: "Effects and overlays (Project files + Download)" },
+  { value: "music", label: "Music and audio (Open on platform + Download audio)" },
+  { value: "background", label: "Backgrounds and stills (Project files + Download)" },
 ];
 
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -45,12 +53,15 @@ export function SectionsAdmin() {
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [kind, setKind] = useState<SectionKind>("gameplay");
+  const [groups, setGroups] = useState<SidebarGroupRow[]>([]);
+  const [newGroup, setNewGroup] = useState("");
 
   const load = useCallback(async () => {
     try {
-      const t = await loadTaxonomy();
+      const [t, g] = await Promise.all([loadTaxonomy(), listSidebarGroups()]);
       setRows(t.sections);
       setSubs(t.subsections);
+      setGroups(g);
     } catch (e) {
       setError((e as Error).message);
     }
@@ -71,7 +82,9 @@ export function SectionsAdmin() {
     } catch (e) {
       const msg = (e as Error).message;
       toast(
-        /foreign key|violates foreign/i.test(msg)
+        /section_groups|sections_group_id/i.test(msg)
+          ? "This group still has sections. Move or delete them first."
+          : /foreign key|violates foreign/i.test(msg)
           ? "This section still has cards. Move or delete them first."
           : /duplicate|unique/i.test(msg)
             ? "That link is already used here. Pick another name."
@@ -105,8 +118,16 @@ export function SectionsAdmin() {
   };
 
   return (
-    <AdminFrame title="Sections">
+    <AdminFrame title="Side menu">
       {error && <ErrorNote>{error}</ErrorNote>}
+      <SidebarGroupsAdmin
+        groups={groups}
+        available={groups.length > 0}
+        sectionCount={rows.reduce((m, r) => m.set(r.group_id, (m.get(r.group_id) ?? 0) + 1), new Map<string, number>())}
+        run={run}
+      />
+      <p className="ng-tag">Sections</p>
+      <h2 className="mb-4 mt-2 text-2xl font-bold uppercase">Pages in the side menu</h2>
       <Panel className="mb-4">
         <form
           className="flex flex-wrap items-end gap-3"
@@ -115,7 +136,8 @@ export function SectionsAdmin() {
             if (!name.trim()) return;
             const n = name.trim();
             setName("");
-            run(() => createSection({ name: n, slug: slugify(n), kind }), "Section added");
+            const group_id = groups.find((g) => g.id === newGroup)?.id ?? groups[0]?.id;
+            run(() => createSection({ name: n, slug: slugify(n), kind, ...(group_id ? { group_id } : {}) }), "Section added");
           }}
         >
           <label className="flex flex-col gap-1.5 text-sm">
@@ -132,6 +154,18 @@ export function SectionsAdmin() {
               ))}
             </Select>
           </label>
+          {groups.length > 0 && (
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium">In sidebar group</span>
+              <Select value={newGroup || groups[0]?.id} onChange={(e) => setNewGroup(e.target.value)} className="w-48">
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </Select>
+            </label>
+          )}
           <Button type="submit" variant="primary">Add section</Button>
         </form>
       </Panel>
@@ -143,6 +177,7 @@ export function SectionsAdmin() {
               <th>Name</th>
               <th>Link</th>
               <th>Type</th>
+              {groups.length > 0 && <th>Group</th>}
               <th>Shown in menu</th>
               <th />
             </tr>
@@ -203,6 +238,22 @@ export function SectionsAdmin() {
                       KINDS.find((k) => k.value === r.kind)?.label.split(" (")[0]
                     )}
                   </td>
+                  {groups.length > 0 && (
+                    <td>
+                      <Select
+                        value={r.group_id}
+                        aria-label={`Sidebar group of ${r.name}`}
+                        className="w-40"
+                        onChange={(ev) => run(() => updateSection(r.id, { group_id: ev.target.value }), "Section moved")}
+                      >
+                        {groups.map((g) => (
+                          <option key={g.id} value={g.id}>
+                            {g.name}
+                          </option>
+                        ))}
+                      </Select>
+                    </td>
+                  )}
                   <td>
                     <Switch checked={r.is_visible} label={r.is_visible ? "Shown" : "Hidden"} onChange={(v) => run(() => updateSection(r.id, { is_visible: v }))} />
                   </td>
