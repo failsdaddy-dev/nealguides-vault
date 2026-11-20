@@ -1,0 +1,484 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ tokens
+   Neal Guide Vault: dark theme only (no light theme, no toggle).
+   Base colours sampled from nealguides.com's live CSS (2026-11-20):
+     navy  #121122  (hero background, cards, menu)
+     navy2 #464566  (secondary / borders)
+     green #25c05f  (buttons, headline accent)
+     green-press #319248
+   Contrast (WCAG): green on navy ~7.8:1; fg #f4f4f8 on navy ~17:1;
+   fg-2 #a9a8c4 on navy ~8.4:1; navy text on green buttons ~7.8:1
+   (white on green is only ~2.4:1, so buttons use navy text). */
+:root {
+  --navy: #121122;
+  --navy-2: #464566;
+  --green: #25c05f;
+  --green-press: #319248;
+
+  --bg: #0b0a17;                 /* page: a touch deeper than the brand navy */
+  --bg-elev: #121122;            /* panels, cards: brand navy */
+  --bg-elev-2: #1b1a31;          /* raised controls */
+  --menu: #1b1a31;
+  --fg: #f4f4f8;
+  --fg-2: #a9a8c4;
+  --line: rgba(70, 69, 102, 0.75);  /* navy-2 */
+  --line-strong: #464566;
+  --hover: rgba(255, 255, 255, 0.06);
+  --press: rgba(255, 255, 255, 0.12);
+  --chip: rgba(255, 255, 255, 0.07);
+  --chip-hover: rgba(255, 255, 255, 0.12);
+  --chip-on-bg: var(--green);
+  --chip-on-fg: var(--navy);
+  --search-bg: #100f1f;
+  --search-border: #2c2b48;
+  --search-btn: #1b1a31;
+  --skeleton: rgba(255, 255, 255, 0.06);
+  --overlay: rgba(5, 5, 14, 0.7);
+  --ph-a: #1b1a31;
+  --ph-b: #0f0e1d;
+  --focus: #25c05f;
+  --brand: #25c05f;
+  --brand-fg: #121122;
+  --danger: #ff7a7a;
+
+  --header-h: 60px;
+  --guide-full: 248px;
+  --guide-mini: 76px;
+  --radius-chip: 8px;
+  --radius-thumb: 12px;
+
+  --dur-1: 150ms;
+  --dur-2: 200ms;
+  --dur-3: 260ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-elev: var(--bg-elev);
+  --color-bg-elev-2: var(--bg-elev-2);
+  --color-menu: var(--menu);
+  --color-fg: var(--fg);
+  --color-fg-2: var(--fg-2);
+  --color-line: var(--line);
+  --color-hover: var(--hover);
+  --color-press: var(--press);
+  --color-chip: var(--chip);
+  --color-chip-hover: var(--chip-hover);
+  --color-chip-on-bg: var(--chip-on-bg);
+  --color-chip-on-fg: var(--chip-on-fg);
+  --color-brand: var(--brand);
+  --color-brand-fg: var(--brand-fg);
+  --color-focus: var(--focus);
+  --color-danger: var(--danger);
+  --color-navy: var(--navy);
+  --color-navy-2: var(--navy-2);
+  --font-sans: var(--font-body), "Inter", "Segoe UI", Arial, sans-serif;
+  --font-display: var(--font-heading), "Barlow Semi Condensed", "Arial Narrow", sans-serif;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* ------------------------------------------------------------------- base */
+html,
+body {
+  background: var(--bg);
+  color: var(--fg);
+}
+body {
+  font-family: var(--font-body), "Inter", "Segoe UI", Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-heading), "Barlow Semi Condensed", "Arial Narrow", sans-serif;
+}
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+::selection {
+  background: color-mix(in srgb, var(--green) 35%, transparent);
+}
+
+/* The official logo file is black on transparent; show it white on dark. */
+.ng-logo-light {
+  filter: invert(1);
+}
+
+/* Text fields: soft green ring on the wrapping .vh-field. */
+input:not([type="checkbox"]):not([type="radio"]):focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+}
+.vh-field {
+  transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+.vh-field:hover {
+  border-color: var(--line-strong);
+}
+.vh-field:focus-within {
+  border-color: color-mix(in srgb, var(--green) 70%, var(--search-border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 18%, transparent);
+}
+
+/* Pop-up menus. */
+.vh-menu {
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--menu);
+  color: var(--fg);
+  box-shadow: 0 18px 48px -16px rgba(0, 0, 0, 0.6);
+}
+.vh-menu-item {
+  padding: 9px 12px;
+  border-radius: 10px;
+  transition: background-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.vh-menu-item:hover,
+.vh-menu-item:focus-visible {
+  background: var(--hover);
+}
+.vh-menu-item:focus-visible { outline-offset: -2px; }
+.vh-menu-item > svg:first-child { transition: color var(--dur-2) var(--ease); }
+.vh-menu-item:hover > svg:first-child { color: var(--brand); }
+
+/* Dropdowns (customizable <select> where supported). */
+select {
+  cursor: pointer;
+}
+@supports (appearance: base-select) {
+  select,
+  select::picker(select) {
+    appearance: base-select;
+  }
+  select {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  select::picker-icon {
+    color: var(--fg-2);
+    transition: rotate var(--dur-2) var(--ease);
+  }
+  select:open::picker-icon {
+    rotate: 180deg;
+  }
+  select::picker(select) {
+    margin-top: 6px;
+    padding: 6px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--menu);
+    color: var(--fg);
+    box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.55);
+    opacity: 0;
+    translate: 0 -4px;
+    transition:
+      opacity var(--dur-2) var(--ease-out),
+      translate var(--dur-2) var(--ease-out),
+      overlay var(--dur-2) allow-discrete,
+      display var(--dur-2) allow-discrete;
+  }
+  select:open::picker(select) {
+    opacity: 1;
+    translate: 0 0;
+  }
+  @starting-style {
+    select:open::picker(select) {
+      opacity: 0;
+      translate: 0 -4px;
+    }
+  }
+  select option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color var(--dur-1) var(--ease);
+  }
+  select option:hover,
+  select option:focus-visible {
+    background: var(--hover);
+    outline: none;
+  }
+  select option:checked {
+    font-weight: 600;
+  }
+  select option::checkmark {
+    order: 1;
+    margin-left: auto;
+    color: var(--brand);
+  }
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ------------------------------------------------------------------ motion
+   Subtle and flat: fade, short slide, small scale. Only transform and
+   opacity animate. No 3D, no tilt, no offset shadows. */
+@keyframes vh-shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+@keyframes vh-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes vh-pop-in {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes vh-route-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes vh-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes vh-pop-out {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.98); }
+}
+@keyframes vh-toast-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.vh-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--skeleton);
+}
+.vh-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, var(--skeleton), transparent);
+  animation: vh-shimmer 1.4s var(--ease) infinite;
+}
+.vh-route-in { animation: vh-route-in var(--dur-3) var(--ease-out) backwards; }
+.vh-fade-in { animation: vh-fade-in var(--dur-2) var(--ease-out) both; }
+.vh-pop-in { animation: vh-pop-in var(--dur-2) var(--ease-out) both; }
+.vh-toast-in { animation: vh-toast-in var(--dur-3) var(--ease-out) both; }
+.vh-fade-out { animation: vh-fade-out var(--dur-1) var(--ease) both; }
+.vh-pop-out { animation: vh-pop-out var(--dur-1) var(--ease) both; }
+
+/* Admin edit drawer. */
+@keyframes vh-drawer-in {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes vh-drawer-out {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(24px); }
+}
+@keyframes vh-sheet-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes vh-sheet-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(12px); }
+}
+.vh-drawer-in { animation: vh-drawer-in var(--dur-2) var(--ease-out) both; }
+.vh-drawer-out { animation: vh-drawer-out var(--dur-1) var(--ease) both; }
+@media (max-width: 639px) {
+  .vh-drawer-in { animation-name: vh-sheet-in; }
+  .vh-drawer-out { animation-name: vh-sheet-out; }
+}
+
+/* Buttons and chips: flat. Hover changes colour (set per button); press
+   scales down slightly. No lift, no offset shadow. */
+.vh-press {
+  transition:
+    transform var(--dur-1) var(--ease),
+    background-color var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease),
+    color var(--dur-1) var(--ease),
+    opacity var(--dur-1) var(--ease);
+}
+.vh-press:not(:disabled):active {
+  transform: scale(0.97);
+}
+.vh-press.bg-brand:not(:disabled):hover,
+.vh-press.bg-chip-on-bg:not(:disabled):hover {
+  background-color: var(--green-press);
+  opacity: 1;
+}
+
+/* Sidebar items: fade in in sequence; a green bar marks the current page. */
+@keyframes vh-nav-in {
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.vh-nav {
+  position: relative;
+  transition: background-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease);
+  animation: vh-nav-in 320ms var(--ease-out) calc(var(--i, 5) * 35ms) backwards;
+}
+.vh-nav > :first-child {
+  transition: color var(--dur-2) var(--ease);
+}
+.vh-nav::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 24%;
+  bottom: 24%;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--brand);
+  transform: scaleY(0);
+  transition: transform var(--dur-3) var(--ease);
+}
+.vh-nav[aria-current="page"]::before { transform: scaleY(1); }
+.vh-nav[aria-current="page"] > :first-child { color: var(--brand); }
+.vh-nav:focus-visible { outline-offset: -2px; }
+
+/* Panel (was RohTre's 3D offset block): now a flat bordered surface.
+   .on-hover shows the border only on hover. */
+.vh-offset {
+  position: relative;
+  border-radius: 16px;
+  background: var(--offset-surface, var(--bg-elev));
+  border: 1px solid var(--line);
+  transition: border-color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease);
+}
+.vh-offset.on-hover {
+  background: transparent;
+  border-color: transparent;
+}
+@media (hover: hover) {
+  .vh-offset.on-hover:hover {
+    background: var(--offset-surface, var(--bg-elev));
+    border-color: var(--line);
+  }
+}
+
+/* Library cards: a soft panel appears behind the card on hover/focus
+   (no tilt, no lift). */
+@media (min-width: 640px) {
+  .vh-card {
+    margin: -8px;
+    padding: 8px;
+    border-radius: calc(var(--radius-thumb) + 8px);
+  }
+  .vh-card:hover,
+  .vh-card:focus-within,
+  .vh-card:has([aria-expanded="true"]) { z-index: 10; }
+}
+@media (max-width: 639px) {
+  .vh-card,
+  .vh-card:hover { background: transparent; border-color: transparent; }
+}
+
+/* ------------------------------------------------------------- landing */
+.vh-text-grad {
+  color: var(--green);
+}
+.ng-hero-glow {
+  isolation: isolate;
+  background:
+    radial-gradient(55% 60% at 85% 0%, color-mix(in srgb, var(--green) 16%, transparent), transparent 70%),
+    radial-gradient(50% 50% at 0% 100%, color-mix(in srgb, var(--navy-2) 45%, transparent), transparent 70%);
+}
+.ng-grid-lines {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(70% 70% at 50% 40%, black, transparent);
+}
+.vh-hero-in { animation: vh-route-in 500ms var(--ease-out) calc(var(--i, 0) * 80ms) backwards; }
+
+/* Browser autofill: keep the field in our colours. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--fg);
+  caret-color: var(--fg);
+  -webkit-box-shadow: 0 0 0 1000px var(--search-bg) inset;
+  transition: background-color 9999s;
+}
+
+/* ------------------------------------------------ audio player (dock) */
+@keyframes vh-dock-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.vh-dock-in { animation: vh-dock-in 220ms var(--ease-out) both; }
+
+.vh-range {
+  appearance: none;
+  height: 16px;
+  background: transparent;
+  cursor: pointer;
+}
+.vh-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background:
+    linear-gradient(var(--brand), var(--brand)) 0 / var(--fill, 0%) 100% no-repeat,
+    linear-gradient(color-mix(in srgb, var(--fg) 30%, transparent), color-mix(in srgb, var(--fg) 30%, transparent)) 0 / var(--buf, 0%) 100% no-repeat,
+    color-mix(in srgb, var(--fg) 14%, transparent);
+}
+.vh-range::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background:
+    linear-gradient(var(--brand), var(--brand)) 0 / var(--fill, 0%) 100% no-repeat,
+    linear-gradient(color-mix(in srgb, var(--fg) 30%, transparent), color-mix(in srgb, var(--fg) 30%, transparent)) 0 / var(--buf, 0%) 100% no-repeat,
+    color-mix(in srgb, var(--fg) 14%, transparent);
+}
+.vh-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -4px;
+  border-radius: 999px;
+  background: var(--brand);
+  transition: transform 150ms var(--ease-out);
+}
+.vh-range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--brand);
+}
+.vh-range:hover::-webkit-slider-thumb,
+.vh-range:focus-visible::-webkit-slider-thumb { transform: scale(1.2); }
+.vh-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px color-mix(in srgb, var(--focus) 35%, transparent); }
+.vh-range:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px color-mix(in srgb, var(--focus) 35%, transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+  .vh-skeleton::after { display: none; }
+  .vh-hero-in { animation: none; }
+}

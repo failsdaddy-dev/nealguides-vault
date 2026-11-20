@@ -1,0 +1,315 @@
+# NealGuides Vault: Project Specification
+
+Status: DRAFT for approval (Step 0). Nothing is built yet. Items marked
+**UNCLEAR** or **TO CONFIRM** wait for the owner's answer.
+
+Reference project (read-only): `C:\Agents\rohtre-vault` (TO CONFIRM path).
+
+---
+
+## 1. Purpose
+
+Neal Guides makes FC gameplay content and works with video editors. Editors
+need short gameplay clips, effects and similar assets for his videos and
+Shorts. He does not want to hand them his whole Google Drive.
+
+NealGuides Vault is a private, sign-in-only library of assets that Neal
+chooses. Each asset is a card with a short preview and a download link that
+points to wherever the file already lives (Google Drive, Mega, Dropbox,
+WeTransfer, a direct file, anything https). The Vault never stores, converts
+or proxies the real files.
+
+Security matters a lot to the client: sign-in, sign-out, access control and
+not leaking the list of assets or links are core requirements, not polish.
+
+## 2. Requirements extracted
+
+Source: the Loom transcript (Hindi-English, transcribed imperfectly) and the
+written brief in the chat message. The two attachment files
+`624abe6d-attachment.txt` and `40514029-attachment.txt` were NOT found on this
+machine; see question list.
+
+### From the voice notes
+
+| # | Requirement | Confidence |
+|---|---|---|
+| V1 | Same functionality as the existing Vault (RohTre Vault), customised for Neal Guides | Clear |
+| V2 | Editors preview a clip, download it, use it in a video | Clear |
+| V3 | Do not give the client "the whole vault"; a separate instance just for Neal | Clear |
+| V4 | Own subdomain, transcribed as "neal rights dot social media dot com" | **UNCLEAR** (see question c) |
+| V5 | Sidebar (not top nav) with a "Vault" area | Clear |
+| V6 | Vault contains "Gameplay clips" and "Effects" | Clear |
+| V7 | Top of sidebar header: transcribed as "Neez Elite" / "Neal GITS" / "nail rise"; most likely "Neal Guides" | **UNCLEAR** (assumed "Neal Guides") |
+| V8 | Inside FC Gameplay, a "Shorts" section | Clear-ish (is it a subsection of FC Gameplay, or its own section?) |
+| V9 | "Music can be used"; reference to a "seller" project's menu bars | **UNCLEAR** (Music as a section? what is the "seller" project?) |
+| V10 | No memes | Clear |
+| V11 | Clips are the same kind as the existing Vault's clips | Clear |
+| V12 | Client is very security-conscious: sign in / sign out are very important | Clear |
+| V13 | Client's assets sit in a large Google Drive; use it if possible, Google Drive is not required; something transcribed as "laal mirch" may be an alternative host (Mega?) | **UNCLEAR**; resolved by accepting any https link |
+| V14 | Future: dashboard showing new uploads from the client's YouTube channel (like an RSS feed), each marked "Shorted" / "Done" / "Tweeted" so the team tracks which videos have been cut into Shorts | Clear (Later) |
+| V15 | Future: the tweet automation built earlier, inside this Vault | Clear (Later) |
+| V16 | Second sidebar item, transcribed as "upload ... subscribe ... quality gameplay" | **UNCLEAR** (likely the future YouTube uploads feed, V14) |
+| V17 | "Backgrounds" mentioned once ("isi ke background") | **UNCLEAR**; may be mis-transcription |
+
+### From the written brief
+
+- Clone RohTre Vault's structure and functionality; new UI (dark only, navy and green, own fonts, no 3D effects, new landing and login pages).
+- Roles: admin and editor. Editors read published cards only; only admins write.
+- Admin: CRUD and reorder sections, subsections, cards; Cloudinary previews; users and roles.
+- Cards: title, description, tags, preview media, generic Download link (any https), ordering, visibility; host badge; opens in a new tab with `rel="noopener noreferrer"`.
+- Vault pages: grid, sidebar navigation, search and filters, preview animations, skeletons, empty states.
+- Cloudinary: same account as RohTre, separate folder prefix, server-side secret only.
+- Security: server-side authorisation, RLS, secure cookies, session timeout, sign-out on all tabs, input validation, no secrets in client bundles, login rate limiting, security headers, nothing listed to logged-out users.
+- "12 sections" is mentioned; possibly a mistake (**UNCLEAR**).
+- Later (not now): YouTube uploads feed with Shorted/Done marker, tweet automation.
+
+## 3. What RohTre Vault is (findings)
+
+Stack: Next.js 16 (App Router, `proxy.ts`, Cache Components), React 19,
+TypeScript, Tailwind 4, Supabase (Postgres + RLS, Auth, Edge Functions on
+Deno), Cloudinary for previews, ffmpeg.wasm for in-browser clip trimming,
+Vitest.
+
+**Routes**
+- `/` public landing (no library content), signed-in users redirected to the first section.
+- `/login` email + password (browser `signInWithPassword`), `?next=` same-site only.
+- `/no-access` for disabled or expired accounts.
+- `/auth/signout` POST-only route handler.
+- `(hub)/[section]` card grid; `(hub)/[section]/[slug]` card page.
+- `(hub)/admin`, `/admin/sections`, `/admin/cards`, `/admin/cards/new`, `/admin/cards/[id]`, `/admin/filters`, `/admin/users`, `/admin/audit`.
+
+**Auth flow**
+- `proxy.ts` refreshes the session cookie (`getClaims`, verified JWT) and redirects guests to `/login`; sets `Cache-Control: private, no-store`.
+- `lib/auth.ts`: `requireViewer()` (signed in + active + not expired), `requireAdmin()` (404 for non-admins). Role is read from `profiles`, never from user metadata.
+- No public sign-up; admin creates accounts through the `admin-create-user` Edge Function. Disabling a user also bans the login.
+
+**Database** (`supabase/migrations`)
+- `profiles` (role admin/editor, is_active, all_access, expires_at), `sections` (slug, name, kind enum, sort_order, is_visible), `filter_groups` + `filters` (tags, with "quick" chips), `cards` (status draft/published, sort_order, full-text `search_tsv`, trigram title search, preview_clip / audio_preview JSON), `card_filters`, `card_links` (label + url; **url column never granted to browser roles**), `user_filter_access` (restricted editors see only cards with their tags), `audit_log`.
+- RLS on every table, `anon` has no grants at all. Helpers in a non-exposed `private` schema (`is_admin`, `can_view_card`, `can_view_filter`, security definer, empty search_path).
+- RPCs: `browse_cards` (grid, search, filters, cursor pagination; OR within a tag group, AND across groups), `filter_counts`, `admin_card_links`, `admin_save_card_links`, `admin_set_card_filters`, `admin_merge_filters`, `admin_reorder`, `admin_link_open_counts`, `release_asset_link` (service role only).
+- Database CHECK constraints refuse previews outside the Cloudinary folder or over size/length limits.
+
+**Edge Functions**: `get-asset-link` (access check + audit, then returns one URL), `admin-create-user`, `admin-manage-user` (disable/enable/delete/set_access/update/reset_password), `cloudinary-sign-upload` (server picks folder and random public_id, signs), `cloudinary-delete-preview` (refuses files still in use). CORS limited to `ALLOWED_ORIGINS`.
+
+**Cloudinary**: signed direct-from-browser uploads (no upload preset), folders `rohtre-vault/previews` (clips up to 10 s / 2 MB) and `rohtre-vault/music` (MP3 up to 30 s / 1 MB). Secrets are Supabase function secrets `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, never in `.env.local`.
+
+**Previews**: `preview-coordinator.ts` autoplays up to 8 on-screen clips (nearest the viewport centre first, staggered), or hover-only; pauses when the tab is hidden, a modal is open, or `prefers-reduced-motion` is set. Cards use a silent `<video>` from a Cloudinary 480 px transform.
+
+**Headers**: X-Frame-Options DENY, CSP (production), nosniff, Referrer-Policy, Permissions-Policy, noindex everywhere, robots disallow all.
+
+### RohTre design choices I would NOT copy (security)
+
+1. **No 2FA.** RohTre removed admin 2FA (migration `20261012100000_remove_2fa.sql`, which also deletes all MFA factors). For a security-focused client I recommend optional TOTP 2FA, required for admins (RohTre's earlier `admin_mfa_switch` design). TO CONFIRM.
+2. **Sample mode with no login.** Without `.env.local`, RohTre opens the library with no sign-in and a fake admin user. NealGuides will fail closed: missing configuration shows an error page, sample mode only in `next dev`.
+3. **Login rate limiting relies only on Supabase defaults**, and sign-in happens directly from the browser. NealGuides: sign-in goes through a server route with per-IP and per-email throttling, plus tightened Supabase Auth rate limits.
+4. **No idle timeout and no cross-tab sign-out.** NealGuides adds both.
+5. **CORS fallback.** When `ALLOWED_ORIGINS` is unset RohTre defaults to localhost; NealGuides refuses all browser origins until it is set.
+6. **CSP `'unsafe-inline'` for scripts.** Kept at first (Next.js needs it without nonces), with nonce-based CSP listed under Later. RohTre also needs it for its theme switch; NealGuides has no theme switch.
+
+Things worth keeping exactly: hidden link URLs released only after an access check and logged; RLS on every table with no `anon` grants; admin-only Edge Functions for user management; database-level preview limits; `?next=` same-site check; POST-only sign-out.
+
+## 4. Roles and permissions
+
+| Action | Guest | Editor | Admin |
+|---|---|---|---|
+| See landing and login pages | yes | yes | yes |
+| See any section, card, tag, count or link | no | published cards they may see | everything incl. drafts |
+| Open a download link | no | yes, for visible cards (logged) | yes (logged) |
+| Create / edit / reorder / delete sections, subsections, cards, tags | no | no | yes |
+| Upload / delete Cloudinary previews | no | no | yes |
+| Create / disable / delete users, set roles and access, reset passwords | no | no | yes |
+| Read audit log | no | no | yes |
+
+Editor visibility: "All access" or restricted to certain tags, exactly as
+RohTre (TO CONFIRM that Neal wants per-editor restriction at all; it costs
+nothing to keep).
+
+Accounts: invite-only, admin creates them (recommended, question d).
+
+## 5. Routes
+
+| Route | Access | Purpose |
+|---|---|---|
+| `/` | public | Short landing: what the Vault is, Sign in button. No asset data. Signed-in users go to the first section. |
+| `/login` | public | Sign in (email + password; 2FA step if enabled). |
+| `/api/auth/login` | public, POST | Server-side sign-in with rate limiting, sets secure cookies. |
+| `/auth/signout` | POST | Sign out, clears cookies, broadcasts to other tabs. |
+| `/no-access` | public | Disabled or expired account. |
+| `/[section]` | signed in | Card grid; `?sub=`, `?q=`, `?f=`, `?sort=` in the URL. |
+| `/[section]/[slug]` | signed in | Card page (large preview, description, tags, download buttons). |
+| `/admin` | admin | Overview (counts, recent downloads). |
+| `/admin/sections` | admin | Sections and subsections: create, rename, hide, reorder, delete. |
+| `/admin/cards`, `/admin/cards/new`, `/admin/cards/[id]` | admin | Card list (filter, reorder, publish), card editor. |
+| `/admin/tags` | admin | Tag groups and tags (RohTre "filters"), merge, quick chips. |
+| `/admin/users` | admin | Users, roles, access, disable, reset password. |
+| `/admin/audit` | admin | Sign-ins, downloads, admin actions. |
+| `/robots.txt` | public | Disallow all. |
+
+Admin pages call `requireAdmin()` on the server; non-admins get 404. Every
+write is checked again by RLS or the Edge Function.
+
+## 6. Sidebar (TO CONFIRM, question b)
+
+```
+[NG logo]  Neal Guides          <- top header bar
+-----------------------------
+VAULT
+  FC Gameplay Clips
+     All
+     Shorts                     <- subsection
+  Effects
+  Music                         <- only if approved
+  Backgrounds                   <- only if approved
+-----------------------------
+Admin                           <- admins only
+```
+
+Sections and subsections are data, so the admin can add more later without
+code changes. I will seed only the approved list.
+
+## 7. Data model (new Supabase project)
+
+Same design as RohTre, adapted:
+
+- `profiles`: id, email, display_name, role (`admin`|`editor`), is_active, all_access, expires_at, timestamps. (`must_change_password` dropped.)
+- `sections`: id, slug, name, kind (`clip`|`audio`|`image`, decides which preview the editor form asks for), icon key, sort_order, is_visible.
+- `subsections` (**new**): id, section_id, slug (unique per section), name, sort_order, is_visible.
+- `cards`: id, section_id, subsection_id (nullable, must belong to the same section), slug, title, description, status (`draft`|`published`), sort_order, preview_clip (jsonb), preview_image (jsonb, **new**), audio_preview (jsonb, only if Music approved), `link_hosts text[]` (badge labels, readable), `has_downloads`, filter_text, search_tsv, published_at, created_by, timestamps. Dropped from RohTre: youtube_id, preview_start/end, loom_url, source_url, has_project_files (no full-video modal or Loom tutorial was asked for; say if you want them back).
+- `card_links`: id, card_id, label (for example "1080p", "4K", "Pack"), url (https only, **never granted to browser roles**), host (computed: `google-drive`, `mega`, `dropbox`, `wetransfer`, `other`), sort_order. One or more per card.
+- `filter_groups`, `filters`, `card_filters`: tags, unchanged.
+- `user_filter_access`: unchanged.
+- `audit_log`: unchanged (login, open_link, open_link_denied, admin_*).
+- RPCs as RohTre (`browse_cards` gains `p_sub`), plus `admin_reorder` support for subsections.
+- CHECK constraints: preview `public_id` must start with `nealguides-vault/`, size and length limits, link URL `^https://`, length limits on all text.
+
+Migrations are written as files in `supabase/migrations/` and **not run**
+until you approve the SQL summary.
+
+## 8. Download link handling
+
+- Admin pastes any `https://` URL. Validated in the form, in the database (CHECK) and by the save RPC: must parse as a URL, scheme https, has a host, no credentials in the URL, max 2,000 characters.
+- Host badge computed on save from the hostname: `drive.google.com` / `docs.google.com` -> Google Drive; `mega.nz` / `mega.io` -> Mega; `dropbox.com` / `dl.dropboxusercontent.com` -> Dropbox; `wetransfer.com` / `we.tl` -> WeTransfer; anything else -> Other (shows the bare host name).
+- The URL is not in the page or the card list. On click the browser calls `get-asset-link` (checks access, writes the audit row) and opens the returned URL in a new tab with `noopener,noreferrer`. The file goes straight from Drive/Mega/etc. to the editor; our server never downloads or proxies it.
+- Note: links themselves must be shared correctly on Google Drive ("Anyone with the link" or shared with the editor's Google account). The Vault cannot change Drive permissions.
+
+## 9. Cloudinary
+
+- Same account as RohTre, separate folder prefix `nealguides-vault/` (`nealguides-vault/previews` for clips, `nealguides-vault/images` for still images, `nealguides-vault/music` if Music is approved).
+- Recommended: **signed uploads**, as RohTre does. The Edge Function forces the folder, a random public_id and allowed formats in the signature, so the browser cannot write anywhere else. This is stricter than an upload preset (an unsigned preset can be used by anyone who finds its name). A named signed preset `nealguides-vault` restricted to the folder can be added on top if you want it visible in the Cloudinary console (question e).
+- Limits (same as RohTre unless you say otherwise): clip up to 10 s and 2 MB (MP4/WebM/MOV); image up to 1 MB (JPG/PNG/WebP); MP3 up to 30 s and 1 MB.
+- Previews are public files with unguessable names (previews only, never the real asset).
+- Deleting or replacing a preview deletes the old file (refused if a card still uses it, and refused outside `nealguides-vault/`).
+- Variable names reused from RohTre: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, set as **Supabase Edge Function secrets**, not in `.env.local`, not in Vercel.
+- Recommended: generate a dedicated API key pair for NealGuides in Cloudinary (Settings -> API Keys), so it can be revoked without touching RohTre.
+
+## 10. Environment variables
+
+`.env.local` (git-ignored; you fill it) and `.env.example` (empty values):
+
+```
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+NEXT_PUBLIC_SITE_URL=
+```
+
+Supabase Edge Function secrets (set by you with `npx supabase secrets set`):
+
+```
+CLOUDINARY_CLOUD_NAME
+CLOUDINARY_API_KEY
+CLOUDINARY_API_SECRET
+ALLOWED_ORIGINS
+```
+
+The Supabase secret key is never used by the Next.js app; Edge Functions get
+it from the Supabase runtime.
+
+## 11. Security rules
+
+- Server-side checks everywhere: `proxy.ts` gate, `requireViewer` / `requireAdmin` in every page and route handler, RLS on every table, admin checks inside every Edge Function and security-definer RPC.
+- `anon` has no table grants and no RPC grants. Logged-out visitors see no section names, counts, cards or links.
+- Link URLs never reach the browser except the one being opened, after an access check, and that open is logged.
+- Cookies: `@supabase/ssr` cookies with `Secure`, `HttpOnly` where possible, `SameSite=Lax`.
+- Session timeout: idle sign-out after 30 minutes of inactivity (TO CONFIRM the duration) plus Supabase JWT expiry 1 hour with refresh-token rotation.
+- Sign-out on all tabs: `BroadcastChannel` + Supabase `onAuthStateChange`; signing out in one tab sends every tab to `/login`. Admin "disable user" bans the login and RLS blocks it at once.
+- Login rate limiting: server route throttles by IP and by email (for example 5 failures in 15 minutes -> wait), plus Supabase Auth rate limits. Generic error message (no "user exists" hints).
+- Input validation: on the client, in route handlers / Edge Functions, and in database CHECK constraints. React escapes output; no `dangerouslySetInnerHTML` for user content.
+- Headers: CSP, X-Frame-Options DENY, frame-ancestors none, nosniff, Referrer-Policy strict-origin-when-cross-origin, Permissions-Policy, HSTS (production), noindex.
+- No secrets in client bundles: only `NEXT_PUBLIC_SUPABASE_URL` and the publishable key are public by design.
+- Optional TOTP 2FA, required for admins (TO CONFIRM).
+
+## 12. UI direction
+
+- Dark theme only, no toggle.
+- Colours sampled from nealguides.com (live CSS, 2026-11-20):
+  - Navy `#121122` (hero background, cards, menu): page background.
+  - Navy secondary `#464566`: borders and muted surfaces.
+  - Green `#25c05f` (buttons, headline accent): primary accent. Darker green `#319248` for pressed / hover states.
+  - Derived tokens: elevated surface (navy lightened), text `#ffffff`, muted text, danger.
+  - Contrast: green on navy about 7.8:1 (passes AA and AAA for text). White on green is only about 2.4:1, so buttons use navy text on green (about 7.8:1), unlike the public site.
+- Fonts: **Barlow Semi Condensed** (headings; condensed caps echo the NEALGUIDES wordmark) + **Inter** (body and UI). Both SIL Open Font License, self-hosted through `next/font`. Not RohTre's Space Grotesk.
+- Logo: the official NealGuides emblem + wordmark from nealguides.com in `/public/brand` (black on transparent; shown white on the dark theme with a CSS filter, file unchanged). Favicons from the same site.
+- Motion: fade, slide, small scale on focus, hover preview playback. No 3D buttons, no 3D card tilt. Everything respects `prefers-reduced-motion`.
+- Layout: top header bar with logo + "Neal Guides", left sidebar (full / collapsed / drawer on mobile), content area. Own visual design.
+- Landing: short, logged-out only. What the Vault is (a private asset library for Neal Guides' editors), a Sign in button. No copied nealguides.com text, no invented numbers or claims.
+
+## 13. Phased build plan
+
+### Phase 1: Foundation
+Next.js + TypeScript + Tailwind setup in this folder, `git init` on branch `build/v1`, `.env.example`, theme tokens, fonts, brand assets, header + sidebar shell, Supabase clients, proxy gate, server sign-in route with rate limit, sign-out (all tabs), idle timeout, roles via `profiles`, login page, landing page, `/no-access`, security headers.
+
+Manual test:
+- [ ] `npm run dev` starts; `/` shows the landing page with the logo and a Sign in button, no asset data.
+- [ ] Visiting `/fc-gameplay-clips` while signed out redirects to `/login?next=...`.
+- [ ] Wrong password shows one generic error; 6 quick failures trigger a wait message.
+- [ ] (After Phase 2 migrations) correct login lands on the first section; sidebar shows; Admin link only for admins.
+- [ ] Sign out in one tab signs out the other open tab.
+- [ ] Idle for the timeout period -> signed out.
+- [ ] Narrow window: sidebar becomes a drawer.
+- [ ] Response headers include CSP (production run), X-Frame-Options, noindex.
+
+### Phase 2: Data and admin
+Migration files (WAIT for approval before anyone runs them), RLS test SQL, Edge Functions, admin overview, sections + subsections, tags, cards editor (download links with host badge, previews via Cloudinary, in-browser clip trimming), card reorder, users and roles, audit log.
+
+Manual test:
+- [ ] Migration dry run lists the expected files only; after push, RLS test reports 0 failed.
+- [ ] Create, rename, hide, reorder, delete a section and a subsection.
+- [ ] Create a card with a Google Drive link: badge says Google Drive. Mega link: Mega. `http://` link: refused.
+- [ ] Upload a preview clip over 2 MB or 10 s: refused. Valid one: plays. Replace it: old file gone from `nealguides-vault/previews` in Cloudinary.
+- [ ] Create an editor; sign in as them; no Admin link; `/admin` returns 404.
+- [ ] Disable the editor while they are signed in: next action sends them to `/no-access`.
+
+### Phase 3: Vault experience
+Sidebar with approved sections and subsections, card grids with cursor pagination, preview autoplay / hover, download buttons with badges and access-checked opening, search, tag filters and chips, sort, card page, skeletons, empty states.
+
+Manual test:
+- [ ] Each section and subsection shows only its published cards; drafts hidden from editors.
+- [ ] Previews play on screen (or on hover) and stop with reduced motion on.
+- [ ] Download opens the right link in a new tab; the audit log shows it.
+- [ ] Network tab shows no link URLs in page data or card lists.
+- [ ] Search finds a card by title and by tag; filters combine as in RohTre; empty search shows the empty state.
+- [ ] Slow network (DevTools throttling) shows skeletons.
+
+### Phase 4: Polish and handover
+Accessibility pass (keyboard, focus rings, labels, contrast), phone / tablet / desktop checks, security review notes (`docs/security-review.md`), README with setup and Vercel deployment, final Later list.
+
+Manual test:
+- [ ] Whole flow with keyboard only.
+- [ ] Phone (375 px), tablet (768 px), desktop (1440 px) layouts.
+- [ ] README steps work from a clean clone.
+
+## 14. Later (not now)
+
+**YouTube uploads feed with Shorted / Done markers**
+- New migration only, no change to existing tables: `yt_channels` (channel_id), `yt_videos` (video_id, title, published_at, thumbnail_url), `yt_video_marks` (video_id, mark `shorted`|`tweeted`|`done`, marked_by, marked_at). Same RLS pattern (editors read and mark, admins manage).
+- A scheduled Edge Function (Supabase cron) reads the channel's public RSS feed (`https://www.youtube.com/feeds/videos.xml?channel_id=...`) and inserts new videos.
+- New sidebar group "Uploads" with a list page; the section/route structure already allows a new top-level route.
+
+**Tweet automation**
+- Plugs in as another Edge Function + a `tweeted` mark on `yt_video_marks`; its own admin page under `/admin/automation`. Needs its own credentials as function secrets.
+
+**Other later items**
+- Nonce-based CSP (remove `'unsafe-inline'`).
+- Google Drive picker (paste-free link selection) if the client wants it.
+- Download counts per editor in the admin overview (data already in `audit_log`).
+- Full YouTube video / Loom tutorial per card (RohTre feature, dropped for now).
