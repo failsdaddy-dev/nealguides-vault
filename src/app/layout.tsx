@@ -1,18 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Barlow_Semi_Condensed, Inter } from "next/font/google";
+import { Chakra_Petch, Exo_2 } from "next/font/google";
 import { APP_NAME, APPLE_ICON, FAVICON_192, FAVICON_32 } from "@/lib/brand";
 import "./globals.css";
 
 // Fonts (both SIL Open Font License 1.1). next/font downloads them at build
 // time and serves them from this app, so browsers make no request to Google.
-//   Barlow Semi Condensed: headings (condensed caps echo the NEALGUIDES wordmark)
-//   Inter: body and interface text
-const heading = Barlow_Semi_Condensed({
+//   Chakra Petch: headings (angular, esports-style caps)
+//   Exo 2: body and interface text (gaming feel, still readable at small sizes)
+const heading = Chakra_Petch({
   variable: "--font-heading",
   subsets: ["latin"],
   weight: ["500", "600", "700"],
 });
-const body = Inter({
+const body = Exo_2({
   variable: "--font-body",
   subsets: ["latin"],
 });

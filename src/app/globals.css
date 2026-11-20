@@ -77,8 +77,8 @@
   --color-danger: var(--danger);
   --color-navy: var(--navy);
   --color-navy-2: var(--navy-2);
-  --font-sans: var(--font-body), "Inter", "Segoe UI", Arial, sans-serif;
-  --font-display: var(--font-heading), "Barlow Semi Condensed", "Arial Narrow", sans-serif;
+  --font-sans: var(--font-body), "Exo 2", "Segoe UI", Arial, sans-serif;
+  --font-display: var(--font-heading), "Chakra Petch", "Arial Narrow", sans-serif;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 }
 
@@ -89,7 +89,7 @@ body {
   color: var(--fg);
 }
 body {
-  font-family: var(--font-body), "Inter", "Segoe UI", Arial, sans-serif;
+  font-family: var(--font-body), "Exo 2", "Segoe UI", Arial, sans-serif;
   font-size: 14px;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
@@ -98,7 +98,7 @@ h1,
 h2,
 h3,
 .font-display {
-  font-family: var(--font-heading), "Barlow Semi Condensed", "Arial Narrow", sans-serif;
+  font-family: var(--font-heading), "Chakra Petch", "Arial Narrow", sans-serif;
 }
 :focus-visible {
   outline: 2px solid var(--focus);
