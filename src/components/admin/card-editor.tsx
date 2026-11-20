@@ -193,7 +193,11 @@ function stored(v: PreviewValue): Json | null {
   const { saved: _saved, localUrl: _localUrl, ...file } = v;
   void _saved;
   void _localUrl;
-  return file as unknown as Json;
+  // The database accepts "peaks" only as a list or left out, never as null
+  // (cards_audio_preview_ok), so drop an empty one.
+  const out: Record<string, unknown> = { ...file };
+  if (!Array.isArray(out.peaks)) delete out.peaks;
+  return out as unknown as Json;
 }
 
 export function CardEditor({
