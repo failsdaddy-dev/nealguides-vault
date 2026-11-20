@@ -1,9 +1,36 @@
 # NealGuides Vault: Project Specification
 
-Status: DRAFT for approval (Step 0). Nothing is built yet. Items marked
-**UNCLEAR** or **TO CONFIRM** wait for the owner's answer.
+Status: APPROVED (Step 0 answers received 2026-11-20). Phase 1 built.
 
-Reference project (read-only): `C:\Agents\rohtre-vault` (TO CONFIRM path).
+Reference project (read-only): `C:\Agents\rohtre-vault`.
+
+## 0. Decisions (owner's answers, 2026-11-20)
+
+Where this table conflicts with later sections, this table wins.
+
+| # | Question | Decision |
+|---|---|---|
+| 1 | RohTre path | `C:\Agents\rohtre-vault`; build in `C:\Agents\nealguides-vault` |
+| 2 | Setup | Claude does the setup (env, CLI link); migrations still wait for approval |
+| 3 | Name | **Neal Guide** (page title, header) |
+| 4 | Domain | Decide at deployment (Phase 4) |
+| 5 | Sidebar | FC Gameplay Clips with a **Shorts** subsection |
+| 6-8 | More sections | Effects, **Music**, **Backgrounds**: all approved |
+| 9 | "12 sections" | A mistake; only the approved sections |
+| 10 | More sections later | Admin adds them from the panel |
+| 11 | Sign-up | Invite only, admin creates accounts |
+| 12 | 2FA | **No 2FA** (same as RohTre) |
+| 13 | Idle timeout | **None** (sign-out on all tabs still applies) |
+| 14 | Editor visibility | Every editor sees all published cards (new users default to all access; per-tag restriction stays in the data model like RohTre) |
+| 15 | Download log | Yes: audit log of who opened which link |
+| 16 | Cloudinary | **New Cloudinary account** (not RohTre's); folder `nealguides-vault/` |
+| 17 | Uploads | Signed uploads, folder forced on the server, no preset |
+| 18 | Cloudinary key | New key provided; stored only in git-ignored `supabase/functions/.env` |
+| 19 | Card features | **Keep all RohTre card features** (full YouTube video, Loom tutorial, project files + downloads, music "Open on platform") plus the generic any-host download link |
+| 20 | Multiple links | Yes, each labelled |
+| 21 | Image previews | Yes, in addition to clips |
+| 22 | Unclear recording lines | Ignored; any https link is accepted |
+| 23 | Uploads feed | On the Later list |
 
 ---
 
