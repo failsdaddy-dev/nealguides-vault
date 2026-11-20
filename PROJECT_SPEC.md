@@ -21,7 +21,7 @@ It holds no secrets (keys live only in git-ignored files).
 
 ### Owner's rules (still in force)
 - Work in phases; after each phase report (what was built, files, assumptions, manual test checklist) and ask before the next phase.
-- Do NOT run lint, build or tests, and do NOT open the site in Claude in Chrome; the owner runs and checks the site manually.
+- Do NOT run lint, build or tests. Do NOT open the site (localhost or live) or run any test in a browser until the owner says so; the owner runs and checks the site manually. Use Chrome only when a task truly needs it (e.g. reading a dashboard setting), not after every change.
 - No deploy, push, merge, DNS or domain change unless the owner says so. Commit on `dev` only.
 - No secrets in output, code, logs or commits. Never print key values.
 - **Every migration: write the file, show the SQL summary, WAIT for approval, then dry run, then push.**
