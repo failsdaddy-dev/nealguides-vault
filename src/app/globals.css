@@ -477,6 +477,23 @@ select {
   transition: opacity var(--dur-2) var(--ease);
 }
 
+/* .ng-corners-4: add the other two brackets (top-right, bottom-left). */
+.ng-panel.ng-corners-4::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: 1;
+  pointer-events: none;
+  --c: color-mix(in srgb, var(--green) 55%, transparent);
+  background:
+    linear-gradient(var(--c), var(--c)) top right / 16px 2px,
+    linear-gradient(var(--c), var(--c)) top right / 2px 16px,
+    linear-gradient(var(--c), var(--c)) bottom left / 16px 2px,
+    linear-gradient(var(--c), var(--c)) bottom left / 2px 16px;
+  background-repeat: no-repeat;
+}
+.ng-panel.ng-corners-4::after { z-index: 1; }
+
 /* HUD panel: the standard surface for cards, tiles and forms. */
 .ng-panel {
   position: relative;
@@ -549,7 +566,10 @@ select {
   line-height: 1;
   letter-spacing: 0.26em;
   text-transform: uppercase;
-  color: var(--green);
+}
+/* Default colour in a layer so text-* utilities (e.g. text-fg-2) override it. */
+@layer components {
+  .ng-tag { color: var(--green); }
 }
 .ng-tag::before {
   content: "";
