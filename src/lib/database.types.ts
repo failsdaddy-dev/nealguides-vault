@@ -376,7 +376,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          group_id?: string
+          group_id: string
           id?: string
           is_visible?: boolean
           kind: Database["public"]["Enums"]["section_kind"]

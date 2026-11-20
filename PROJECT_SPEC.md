@@ -21,7 +21,7 @@ It holds no secrets (keys live only in git-ignored files).
 
 ### Owner's rules (still in force)
 - Work in phases; after each phase report (what was built, files, assumptions, manual test checklist) and ask before the next phase.
-- Do NOT run lint, build or tests; the owner runs the site. (Reading pages in Chrome is fine.)
+- Do NOT run lint, build or tests, and do NOT open the site in Claude in Chrome; the owner runs and checks the site manually.
 - No deploy, push, merge, DNS or domain change unless the owner says so. Commit on `dev` only.
 - No secrets in output, code, logs or commits. Never print key values.
 - **Every migration: write the file, show the SQL summary, WAIT for approval, then dry run, then push.**
@@ -46,7 +46,8 @@ Migrations in `supabase/migrations/`, all pushed and approved:
 3. `20261120100200_triggers_and_rpc.sql`: profile on sign-up, login audit, host badge and link flags, search text, admin content audit (create/delete/publish), `browse_cards` (with `p_sub`), `filter_counts` (with `p_sub`), admin RPCs (links, tags, merge, reorder incl. subsections, open counts), `release_asset_link`.
 4. `20261120100300_seed_sections.sql`: FC Gameplay Clips (+ Shorts), Effects, Music, Backgrounds.
 5. `20261120110000_lock_rls_auto_enable.sql`: revokes public execute on Supabase's own `rls_auto_enable()` (advisor warning).
-- **RLS test** `supabase/tests/rls_test.sql`: **78 passed, 0 failed** on the live database (it rolls itself back). Run with `npx supabase db query --linked -f supabase/tests/rls_test.sql`.
+6. `20261120130000_sidebar_groups.sql`: `section_groups` (top-level side-menu buttons like Vault; Group > Section > Subsection), `sections.group_id`, hidden group hides its sections, non-empty group can't be deleted, reorder groups. Existing sections moved into "Vault".
+- **RLS test** `supabase/tests/rls_test.sql`: **87 passed, 0 failed** on the live database (it rolls itself back). Run with `npx supabase db query --linked -f supabase/tests/rls_test.sql`.
 - Supabase security advisor: **no issues**.
 - `src/lib/database.types.ts` is generated from the live schema (`npx supabase gen types typescript --linked --schema public`).
 
