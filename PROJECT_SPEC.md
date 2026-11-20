@@ -1,8 +1,79 @@
 # NealGuides Vault: Project Specification
 
-Status: APPROVED (Step 0 answers received 2026-11-20). Phase 1 built.
+Status: APPROVED (Step 0 answers received 2026-11-20). Phase 1 done, Phase 2 done (database live), Phase 3 part 1 done. See **Build log and current state** below before doing anything; it is the up-to-date context.
 
 Reference project (read-only): `C:\Agents\rohtre-vault`.
+
+## Build log and current state (keep this updated)
+
+Last updated: 2026-11-20. This section is the working memory of the build.
+It holds no secrets (keys live only in git-ignored files).
+
+### Where things are
+- **Code:** `C:\Agents\nealguides-vault`. **GitHub:** `failsdaddy-dev/nealguides-vault`.
+  - `dev` = all work (push only when the owner says "push").
+  - `main` = one empty commit; stays empty until the owner says the system is final.
+- **RohTre Vault** (`C:\Agents\rohtre-vault`) is read-only reference. Never edit it, its Supabase, Vercel or domain.
+- **Supabase project:** `NealGuides-Vault`, ref `srrehtvvduncbhygxmsu` (owner's new account). The Supabase CLI on this machine is logged in to that account (via `npx supabase login --no-browser` in a real terminal) and linked.
+- **Cloudinary:** new account, cloud name `xl5hcj3t` (Free plan). Key and secret are only in `supabase/functions/.env` (git-ignored) and as Supabase function secrets.
+- **Env files (git-ignored):** `.env.local` has `NEXT_PUBLIC_SUPABASE_URL` and the publishable key (the app is out of sample mode). `supabase/functions/.env` has the Cloudinary values and `ALLOWED_ORIGINS=http://localhost:3000`.
+- **Admin account:** one user created by the owner in the Supabase dashboard and promoted to `role = 'admin'` with SQL (owner approved). The owner was advised to change its password to one meeting the 12+ chars, upper, lower, digit rule.
+
+### Owner's rules (still in force)
+- Work in phases; after each phase report (what was built, files, assumptions, manual test checklist) and ask before the next phase.
+- Do NOT run lint, build or tests; the owner runs the site. (Reading pages in Chrome is fine.)
+- No deploy, push, merge, DNS or domain change unless the owner says so. Commit on `dev` only.
+- No secrets in output, code, logs or commits. Never print key values.
+- **Every migration: write the file, show the SQL summary, WAIT for approval, then dry run, then push.**
+- Never invent facts, content, prices, statistics or testimonials. No emoji. Official logos only from nealguides.com.
+- **The site must NOT look like RohTre Vault.** Keep RohTre's features and functionality only; UI, UX and icons are our own gaming (HUD) design, matching the landing page.
+- If something is unclear, ask; do not guess.
+
+### Product decisions made during the build (on top of section 0)
+- Product name: **Neal Guides** (renamed from "Neal Guide").
+- Fonts: **Chakra Petch** (headings) + **Exo 2** (body), for a gaming look.
+- **HUD theme everywhere** (see section 12): sharp corners, grid backdrop, angled green buttons with a light sweep, panels with green corner brackets, `ng-tag` labels, glow accents. Shared parts: `src/components/hud.tsx` and the "HUD parts", "HUD menu" and "HUD cards" blocks in `globals.css`.
+- **Landing intro:** game-style boot screen before the landing page (HUD corners, scanline, glitching logo, loading bar with counter, shutter reveal), once per browser tab, skippable, off for reduced motion (`src/components/landing-intro.tsx`).
+- **Login:** a centred game-style console (`auth-shell.tsx`), also used by no-access and not-found.
+- **Icons:** our own set (`src/components/icons.tsx`): angular, mitred, diamonds and chamfers. RohTre's icons removed.
+- **Sidebar:** sections from the database; a section with subsections opens like a dropdown ("All <section>" + each subsection, `?sub=<slug>`); the current section opens itself. Editable entirely from Admin -> Sections.
+- Next.js upgraded to **16.4.6** (security release).
+
+### Database (live)
+Migrations in `supabase/migrations/`, all pushed and approved:
+1. `20261120100000_core_schema.sql`: tables (profiles, sections, **subsections**, filter_groups, filters, cards, card_filters, card_links, user_filter_access, audit_log); section kinds gameplay/effect/music/background; media types youtube (clip)/audio/**image**; preview limits as CHECKs (clip 10 s / 2 MB, MP3 30 s / 1 MB, image 1 MB JPG/PNG/WebP, all under `nealguides-vault/`); links: any https host, no user:password@, max 2,000 chars, **host badge** computed (google-drive, mega, dropbox, wetransfer, other); `all_access` default true.
+2. `20261120100100_access_rules.sql`: RLS on every table, anon has nothing, link URLs never granted to browser roles, admin = active admin profile (no 2FA).
+3. `20261120100200_triggers_and_rpc.sql`: profile on sign-up, login audit, host badge and link flags, search text, admin content audit (create/delete/publish), `browse_cards` (with `p_sub`), `filter_counts` (with `p_sub`), admin RPCs (links, tags, merge, reorder incl. subsections, open counts), `release_asset_link`.
+4. `20261120100300_seed_sections.sql`: FC Gameplay Clips (+ Shorts), Effects, Music, Backgrounds.
+5. `20261120110000_lock_rls_auto_enable.sql`: revokes public execute on Supabase's own `rls_auto_enable()` (advisor warning).
+- **RLS test** `supabase/tests/rls_test.sql`: **78 passed, 0 failed** on the live database (it rolls itself back). Run with `npx supabase db query --linked -f supabase/tests/rls_test.sql`.
+- Supabase security advisor: **no issues**.
+- `src/lib/database.types.ts` is generated from the live schema (`npx supabase gen types typescript --linked --schema public`).
+
+### Edge Functions (deployed)
+`get-asset-link`, `admin-create-user`, `admin-manage-user`, `cloudinary-sign-upload`, `cloudinary-delete-preview` (adapted from RohTre): CORS fail-closed via `ALLOWED_ORIGINS` plus a server-side origin check; passwords 12+ with upper, lower, digit; image previews; `nealguides-vault/` folders. Secrets set: Cloudinary cloud name, key, secret, `ALLOWED_ORIGINS`. **Before launch:** add the production domain to `ALLOWED_ORIGINS`.
+
+### Admin panel
+Same powers as RohTre's (checked file by file) plus: subsections per section, card subsection picker, image previews (shrunk to WebP in the browser when over 1 MB), link checks with live host badge, 20 links per card, new audit labels, all access on by default for new editors. The admin can create any section with any name; its type (gameplay/effect/music/background) sets the buttons and default preview.
+
+### Test content (live, remove before launch)
+- 13 published **TEST** cards: FC Gameplay Clips 4 (+2 in Shorts, vertical), Effects 2, Music 2, Backgrounds 2 images + 1 loop. Media are original ffmpeg animations marked "TEST", uploaded to Cloudinary `nealguides-vault/`.
+- Each card has 3 example links (Google Drive, Mega, example.com) that are not real files.
+- Tag groups "Test style" and "Test format" (tags test-neon, test-retro, test-16x9, test-9x16).
+- **Cleanup:** delete the cards in Admin -> Cards (removes their Cloudinary files too), then delete the two test tag groups in Admin -> Tags.
+
+### Phase status
+- **Phase 1** (foundation): done.
+- **Phase 2** (data and admin): done; database live, functions deployed, RLS 78/78.
+- **Phase 3** (vault experience): **part 1 done** (icons, sidebar with subsection dropdowns, section header and subsection tabs, HUD cards incl. Shorts and image cards, host badges, card page with files list, filter chips, skeletons, empty states).
+  - **Part 2 to do:** top search bar, clip pop-up (video modal), bottom music player bar, account menu, admin screens in full HUD style; then the Phase 3 manual test.
+- **Phase 4** (polish and handover): not started (accessibility, phone/tablet checks, security review notes, README, Vercel deploy, domain).
+
+### Known notes
+- The in-memory login rate limit counts per server instance; Supabase Auth limits apply on top.
+- npm reports dev-only advisories (vitest, typescript-eslint, zod); production dependencies are clean.
+- Two npm install scripts were skipped (esbuild, unrs-resolver); `next dev` does not need them.
+- The `!` prompt is not a real terminal: interactive CLI logins must be run by the owner in a normal terminal.
 
 ## 0. Decisions (owner's answers, 2026-11-20)
 
@@ -175,7 +246,7 @@ Accounts: invite-only, admin creates them (recommended, question d).
 Admin pages call `requireAdmin()` on the server; non-admins get 404. Every
 write is checked again by RLS or the Edge Function.
 
-## 6. Sidebar (TO CONFIRM, question b)
+## 6. Sidebar (built: see Build log; sections and subsections from the database)
 
 ```
 [NG logo]  Neal Guides          <- top header bar
@@ -278,7 +349,9 @@ it from the Supabase runtime.
 - **HUD theme (gaming look, applies to every page):** sharp corners (Tailwind radius scale overridden), faint grid backdrop, angled-corner green buttons with a light sweep, `.ng-panel` surfaces with green corner brackets, `.ng-tag` labels, `.ng-btn-ghost`, reticle around the emblem, ticker band. Shared pieces: `src/components/hud.tsx` and the "HUD parts" block in `globals.css`. New pages must use these.
 - Logo: the official NealGuides emblem + wordmark from nealguides.com in `/public/brand` (black on transparent; shown white on the dark theme with a CSS filter, file unchanged). Favicons from the same site.
 - Motion: fade, slide, small scale on focus, hover preview playback. No 3D buttons, no 3D card tilt. Everything respects `prefers-reduced-motion`.
-- Layout: top header bar with logo + "Neal Guides", left sidebar (full / collapsed / drawer on mobile), content area. Own visual design.
+- Layout: top header bar with logo + "Neal Guides", left sidebar (full / icon rail / drawer on mobile), content area. Own visual design; **must not look like RohTre Vault** (owner's rule).
+- Icons: our own HUD set in `src/components/icons.tsx` (angular, mitred, diamonds). Do not reuse RohTre's icons.
+- Landing intro: game-style boot animation before the landing page (see Build log).
 - Landing: short, logged-out only. What the Vault is (a private asset library for Neal Guides' editors), a Sign in button. No copied nealguides.com text, no invented numbers or claims.
 
 ## 13. Phased build plan
