@@ -65,7 +65,7 @@ Same powers as RohTre's (checked file by file) plus: subsections per section, ca
 
 ### Phase status
 - **Phase 1** (foundation): done.
-- **Phase 2** (data and admin): done; database live, functions deployed, RLS 78/78.
+- **Phase 2** (data and admin): done; database live, functions deployed, RLS 87/87 (after the sidebar-groups migration).
 - **Phase 3** (vault experience): **part 1 done** (icons, sidebar with subsection dropdowns, section header and subsection tabs, HUD cards incl. Shorts and image cards, host badges, card page with files list, filter chips, skeletons, empty states).
   - **Part 2 done (2026-11-23):** HUD restyle of the top bar (angled search, "/" focuses search), every dialog (`ng-frame` with corner brackets, tag + caps title; clip pop-up has a framed screen with a PREVIEW readout), music dock (frame, NOW PLAYING tag, angled play button, diamond seek thumb, square waveform bars), account menu (angled avatar, role chip), admin screens (tab bar, HUD buttons `ng-abtn`, labels `ng-label`, square switches, framed panels, HUD tables, stat tiles). Styles: "HUD controls" block at the end of `globals.css`. Next: the owner runs the Phase 3 manual test.
 - **Phase 4** (polish and handover): not started (accessibility, phone/tablet checks, security review notes, README, Vercel deploy, domain).
