@@ -147,8 +147,8 @@ export function TopBar() {
   }
 
   return (
-    <header className="ng-hud-line fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between gap-4 border-b border-line bg-bg/90 px-4 backdrop-blur max-sm:px-2">
-      <div className="flex shrink-0 items-center gap-2">
+    <header className="ng-hud-line fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between gap-6 border-b border-line bg-bg/90 px-4 backdrop-blur max-sm:gap-2 max-sm:px-2 sm:grid sm:grid-cols-[1fr_minmax(0,600px)_1fr]">
+      <div className="flex min-w-0 shrink-0 items-center gap-3">
         <IconButton label="Menu" onClick={toggleGuide}>
           <MenuIcon />
         </IconButton>
@@ -157,11 +157,11 @@ export function TopBar() {
         </Link>
       </div>
 
-      <div className="hidden min-w-0 flex-1 justify-center sm:flex">
+      <div className="hidden min-w-0 sm:block">
         <SearchForm hotkey />
       </div>
 
-      <div className="flex shrink-0 items-center gap-1">
+      <div className="flex shrink-0 items-center justify-end gap-2">
         <IconButton label="Search" onClick={() => setMobileSearch(true)} className="sm:hidden">
           <SearchIcon />
         </IconButton>

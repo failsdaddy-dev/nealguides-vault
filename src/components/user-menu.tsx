@@ -36,9 +36,9 @@ export function UserMenu() {
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="ng-avatar-btn vh-press ml-1 grid size-10 place-items-center"
+        className="ng-avatar-btn vh-press grid size-10 place-items-center"
       >
-        <Avatar name={user.displayName} />
+        <Avatar name={user.displayName} size={38} />
       </button>
       {open && (
         <div role="menu" className="vh-pop-in ng-frame absolute right-0 top-12 z-50 w-[300px] origin-top-right overflow-hidden p-1.5">

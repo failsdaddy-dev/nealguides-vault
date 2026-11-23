@@ -1447,19 +1447,23 @@ body:has(.ng-intro:not(.ng-intro--exit)) .vh-hero-in {
    admin screens. Position is never set on the element itself here, so
    fixed / absolute / relative utilities keep working. */
 
-/* Square icon button with angled corners. */
-.ng-icon-btn {
-  display: grid;
-  flex-shrink: 0;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border: 1px solid transparent;
-  color: var(--fg);
-  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
-  transition: color var(--dur-1) var(--ease), background-color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+/* Square icon button with angled corners. Base in a layer so utilities on
+   the same element (sm:hidden, -mr-1) win; an unlayered display:grid
+   showed the phone-only search button on desktop. */
+@layer components {
+  .ng-icon-btn {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid transparent;
+    color: var(--fg);
+    clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+    transition: color var(--dur-1) var(--ease), background-color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+  }
+  .ng-icon-btn.is-sm { width: 36px; height: 36px; }
 }
-.ng-icon-btn.is-sm { width: 36px; height: 36px; }
 .ng-icon-btn:enabled:hover {
   color: var(--green);
   border-color: color-mix(in srgb, var(--green) 45%, var(--line));
@@ -1473,6 +1477,7 @@ body:has(.ng-intro:not(.ng-intro--exit)) .vh-hero-in {
 /* Top search bar: angled field, green scan line on focus. */
 .ng-search {
   display: flex;
+  margin-inline: auto;
   align-items: center;
   height: 40px;
   width: 100%;
