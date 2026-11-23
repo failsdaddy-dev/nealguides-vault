@@ -19,7 +19,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <AudioProvider>
         <a
           href="#main"
-          className="fixed left-2 top-2 z-[70] -translate-y-20 rounded-md bg-chip-on-bg px-3 py-2 text-sm text-chip-on-fg focus:translate-y-0"
+          className="ng-cut fixed left-2 top-2 z-[80] -translate-y-20 bg-brand px-4 py-2 font-display text-sm font-bold uppercase tracking-[0.08em] text-brand-fg focus:translate-y-0"
         >
           Skip to content
         </a>

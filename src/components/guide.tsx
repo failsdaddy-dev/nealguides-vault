@@ -11,7 +11,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { HOME_PATH } from "@/lib/brand";
 import type { Section, SidebarGroup } from "@/lib/types";
 import { useCurrentSection } from "@/lib/use-browse-url";
@@ -268,11 +268,36 @@ export function Guide() {
     setDrawerOpen(false);
   }, [pathname, setDrawerOpen]);
 
+  // Drawer keyboard: focus moves in on open, Tab stays inside, Esc closes,
+  // focus returns to the Menu button (or whatever opened it) on close.
+  const drawer = useRef<HTMLElement>(null);
   useEffect(() => {
     if (!drawerOpen) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setDrawerOpen(false);
+    const opener = document.activeElement as HTMLElement | null;
+    const el = drawer.current;
+    el?.querySelector<HTMLElement>("button, a[href]")?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setDrawerOpen(false);
+      } else if (e.key === "Tab" && el) {
+        const items = el.querySelectorAll<HTMLElement>('a[href],button:not([disabled]),input:not([disabled]),[tabindex]:not([tabindex="-1"])');
+        if (!items.length) return;
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      if (opener?.isConnected) opener.focus();
+    };
   }, [drawerOpen, setDrawerOpen]);
 
   return (
@@ -303,7 +328,10 @@ export function Guide() {
           }`}
         />
         <aside
+          ref={drawer}
           aria-label="Menu"
+          aria-modal={drawerOpen || undefined}
+          role={drawerOpen ? "dialog" : undefined}
           inert={!drawerOpen}
           className={`ng-guide absolute inset-y-0 left-0 w-[var(--guide-full)] overflow-y-auto shadow-2xl transition-transform duration-[var(--dur-3)] ease-[var(--ease)] ${
             drawerOpen ? "translate-x-0" : "-translate-x-full"

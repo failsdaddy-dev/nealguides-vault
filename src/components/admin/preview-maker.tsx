@@ -115,11 +115,12 @@ export function PreviewMaker({ source, onDone, onCancel }: { source: File; onDon
       </div>
 
       {phase.kind === "done" ? (
-        <video src={phase.url} muted loop autoPlay playsInline className="aspect-video w-full max-w-[420px] rounded-lg bg-black object-cover" />
+        <video src={phase.url} muted loop autoPlay playsInline aria-label="Finished preview clip" className="aspect-video w-full max-w-[420px] rounded-lg bg-black object-cover" />
       ) : canPlay ? (
         <video
           ref={video}
           src={sourceUrl}
+          aria-label="Source video (choose the start)"
           muted
           playsInline
           preload="metadata"

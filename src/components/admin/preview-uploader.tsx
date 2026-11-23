@@ -301,6 +301,7 @@ export function PreviewUploader({
           {kind === "video" && src && (
             <video
               src={value.localUrl ?? clipLoopUrl(value.url)}
+              aria-label="Card preview clip"
               muted
               loop
               autoPlay
