@@ -276,7 +276,7 @@ export function PreviewUploader({
           />
         )
       ) : progress !== null ? (
-        <div className="flex items-center gap-3 rounded-xl border border-line p-3" role="status" aria-live="polite">
+        <div className="ng-panel flex items-center gap-3 p-3" role="status" aria-live="polite">
           <UploadIcon size={18} className="shrink-0 text-brand" />
           <div className="min-w-0 flex-1">
             <p className="text-sm">Uploading… {Math.round(progress * 100)}%</p>
@@ -289,7 +289,7 @@ export function PreviewUploader({
           </Button>
         </div>
       ) : value ? (
-        <div className="flex flex-col gap-3 rounded-xl border border-line p-3">
+        <div className="ng-panel flex flex-col gap-3 p-3">
           {kind === "image" && src && (
             // eslint-disable-next-line @next/next/no-img-element -- Cloudinary preview or local blob
             <img
@@ -348,7 +348,7 @@ export function PreviewUploader({
         <button
           type="button"
           onClick={() => input.current?.click()}
-          className="vh-press flex flex-col items-center gap-2 rounded-xl border border-dashed border-line px-4 py-6 text-sm text-fg-2 hover:bg-hover"
+          className="vh-press flex flex-col items-center gap-2 border border-dashed border-line px-4 py-6 text-sm text-fg-2 hover:border-[var(--green)] hover:bg-[color-mix(in_srgb,var(--green)_6%,transparent)] hover:text-fg"
         >
           <UploadIcon size={22} className="text-brand" />
           <span className="font-medium text-fg">{kind === "audio" ? "Choose track" : kind === "image" ? "Choose image" : "Choose video"}</span>

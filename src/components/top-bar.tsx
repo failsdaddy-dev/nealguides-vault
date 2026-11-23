@@ -37,14 +37,14 @@ export function IconButton({
       aria-label={label}
       title={label}
       onClick={onClick}
-      className={`vh-press no-lift grid size-10 shrink-0 place-items-center rounded-full hover:bg-hover active:bg-press ${className}`}
+      className={`ng-icon-btn ${className}`}
     >
       {children}
     </button>
   );
 }
 
-function SearchForm({ autoFocus, onDone }: { autoFocus?: boolean; onDone?: () => void }) {
+function SearchForm({ autoFocus, onDone, hotkey }: { autoFocus?: boolean; onDone?: () => void; hotkey?: boolean }) {
   const { state, go, section } = useBrowseUrl();
   const [value, setValue] = useState(state.q);
   const input = useRef<HTMLInputElement>(null);
@@ -59,6 +59,21 @@ function SearchForm({ autoFocus, onDone }: { autoFocus?: boolean; onDone?: () =>
     if (autoFocus) input.current?.focus();
   }, [autoFocus]);
 
+  // "/" jumps to the search box (desktop bar only), unless typing elsewhere.
+  useEffect(() => {
+    if (!hotkey) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      if (document.querySelector('[role="dialog"]')) return;
+      e.preventDefault();
+      input.current?.focus();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [hotkey]);
+
   const submit = (e: FormEvent) => {
     e.preventDefault();
     go({ q: value }, { toSection: section });
@@ -70,17 +85,17 @@ function SearchForm({ autoFocus, onDone }: { autoFocus?: boolean; onDone?: () =>
     <form
       role="search"
       onSubmit={submit}
-      className="vh-field group flex h-10 w-full max-w-[640px] items-center overflow-hidden rounded-full border border-[var(--search-border)] bg-[var(--search-bg)]"
+      className="ng-search"
     >
       <div className="flex h-full min-w-0 flex-1 items-center pl-4">
-        <SearchIcon size={18} className="mr-2 hidden shrink-0 text-fg-2 group-focus-within:block" />
+        <SearchIcon size={18} className="ng-search-icon mr-2.5 shrink-0" />
         <input
           ref={input}
           type="search"
           name="q"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder="Search clips, effects, music…"
+          placeholder="Search clips, effects, music..."
           aria-label="Search"
           maxLength={200}
           className="h-full min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-fg-2 [&::-webkit-search-cancel-button]:hidden"
@@ -93,19 +108,24 @@ function SearchForm({ autoFocus, onDone }: { autoFocus?: boolean; onDone?: () =>
               setValue("");
               input.current?.focus();
             }}
-            className="grid size-9 shrink-0 place-items-center rounded-full hover:bg-hover"
+            className="ng-icon-btn is-sm mr-1"
           >
-            <CloseIcon size={20} />
+            <CloseIcon size={18} />
           </button>
+        )}
+        {hotkey && !value && (
+          <span className="ng-kbd mr-3 max-md:hidden" aria-hidden="true" title="Press / to search">
+            /
+          </span>
         )}
       </div>
       <button
         type="submit"
         aria-label="Search"
         title="Search"
-        className="grid h-full w-16 shrink-0 place-items-center border-l border-[var(--search-border)] bg-[var(--search-btn)] transition-colors duration-[var(--dur-1)] hover:bg-chip-hover"
+        className="ng-search-go"
       >
-        <SearchIcon size={22} />
+        <SearchIcon size={20} />
       </button>
     </form>
   );
@@ -117,7 +137,7 @@ export function TopBar() {
 
   if (mobileSearch) {
     return (
-      <header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-2 bg-bg px-2">
+      <header className="ng-hud-line fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-2 border-b border-line bg-bg px-2">
         <IconButton label="Back" onClick={() => setMobileSearch(false)}>
           <BackIcon />
         </IconButton>
@@ -132,13 +152,13 @@ export function TopBar() {
         <IconButton label="Menu" onClick={toggleGuide}>
           <MenuIcon />
         </IconButton>
-        <Link href={HOME_PATH} aria-label={`${APP_NAME} home`} className="rounded-md px-2 py-1">
+        <Link href={HOME_PATH} aria-label={`${APP_NAME} home`} className="px-2 py-1 transition-opacity hover:opacity-85">
           <Wordmark />
         </Link>
       </div>
 
       <div className="hidden min-w-0 flex-1 justify-center sm:flex">
-        <SearchForm />
+        <SearchForm hotkey />
       </div>
 
       <div className="flex shrink-0 items-center gap-1">

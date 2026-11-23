@@ -21,25 +21,21 @@ export function AdminFrame({ title, actions, children }: { title: string; action
   return (
     <div className="mx-auto max-w-[1280px] px-6 pb-16 max-sm:px-3">
       <title>{`${title} · Admin${TITLE_SUFFIX}`}</title>
-      <nav aria-label="Admin" className="no-scrollbar sticky top-14 z-20 -mx-1.5 flex gap-3 overflow-x-auto bg-bg px-1.5 py-3">
+      <nav aria-label="Admin" className="ng-tabs no-scrollbar sticky top-14 z-20 -mx-1.5 bg-bg/95 px-1.5 pt-2 backdrop-blur">
         {TABS.map((t) => {
           const on = t.href === "/admin" ? path === "/admin" : path.startsWith(t.href);
           return (
-            <Link
-              key={t.href}
-              href={t.href}
-              aria-current={on ? "page" : undefined}
-              className={`vh-press flex h-8 shrink-0 items-center rounded-lg px-3 text-sm font-medium ${
-                on ? "bg-chip-on-bg text-chip-on-fg" : "bg-chip hover:bg-chip-hover"
-              }`}
-            >
+            <Link key={t.href} href={t.href} aria-current={on ? "page" : undefined} className="ng-tab">
               {t.label}
             </Link>
           );
         })}
       </nav>
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-5 pt-3">
-        <h1 className="text-2xl font-semibold">{title}</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3 pb-6 pt-6">
+        <div>
+          <p className="ng-tag">Admin console</p>
+          <h1 className="mt-2 font-display text-3xl font-bold uppercase tracking-[0.04em]">{title}</h1>
+        </div>
         {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
       </div>
       {children}
@@ -50,17 +46,18 @@ export function AdminFrame({ title, actions, children }: { title: string; action
 type BtnProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "plain" | "danger" | "ghost" };
 
 export function Button({ variant = "plain", className = "", ...rest }: BtnProps) {
+  // primary: the green angled HUD button (globals.css .vh-press.bg-brand).
   const look = {
-    primary: "bg-chip-on-bg text-chip-on-fg enabled:hover:opacity-90",
-    plain: "bg-chip enabled:hover:bg-chip-hover",
-    danger: "bg-brand text-brand-fg enabled:hover:opacity-90",
-    ghost: "enabled:hover:bg-hover",
+    primary: "bg-brand text-brand-fg text-[13px]",
+    plain: "ng-abtn",
+    danger: "ng-abtn is-danger",
+    ghost: "ng-abtn is-ghost",
   }[variant];
   return (
     <button
       type="button"
       {...rest}
-      className={`vh-press inline-flex h-9 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 ${look} ${className}`}
+      className={`vh-press inline-flex h-9 shrink-0 items-center justify-center gap-2 whitespace-nowrap px-4 disabled:cursor-not-allowed disabled:opacity-50 ${look} ${className}`}
     />
   );
 }
@@ -69,8 +66,8 @@ export function ButtonLink({ href, children, primary }: { href: string; children
   return (
     <Link
       href={href}
-      className={`vh-press inline-flex h-9 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 text-sm font-medium ${
-        primary ? "bg-chip-on-bg text-chip-on-fg hover:opacity-90" : "bg-chip hover:bg-chip-hover"
+      className={`vh-press inline-flex h-9 shrink-0 items-center justify-center gap-2 whitespace-nowrap px-4 ${
+        primary ? "bg-brand text-brand-fg text-[13px]" : "ng-abtn"
       }`}
     >
       {children}
@@ -107,12 +104,12 @@ export function ConfirmButton({ onConfirm, children, confirmLabel = "Click again
   );
 }
 
-const FIELD = "w-full rounded-xl border border-[var(--search-border)] bg-[var(--search-bg)] px-3 text-sm outline-none vh-field";
+const FIELD = "w-full rounded-sm border border-[var(--search-border)] bg-[var(--search-bg)] px-3 text-sm outline-none vh-field";
 
 export function Field({ label, hint, children, className = "" }: { label: string; hint?: ReactNode; children: ReactNode; className?: string }) {
   return (
     <label className={`flex min-w-0 flex-col gap-1.5 text-sm ${className}`}>
-      <span className="font-medium">{label}</span>
+      <span className="ng-label">{label}</span>
       {children}
       {hint && <span className="text-xs text-fg-2">{hint}</span>}
     </label>
@@ -128,7 +125,7 @@ export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
 }
 
 export function Select(props: SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select {...props} className={`${FIELD.replace("rounded-xl", "rounded-full")} h-10 pl-4 pr-3 ${props.className ?? ""}`} />;
+  return <select {...props} className={`${FIELD} h-10 pl-3 pr-3 ${props.className ?? ""}`} />;
 }
 
 export function Switch({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
@@ -140,8 +137,8 @@ export function Switch({ checked, onChange, label }: { checked: boolean; onChang
       onClick={() => onChange(!checked)}
       className="inline-flex items-center gap-3 text-sm"
     >
-      <span className={`relative h-5 w-9 rounded-full ${checked ? "bg-brand" : "bg-chip-hover"}`}>
-        <span className={`absolute left-0.5 top-0.5 size-4 rounded-full bg-white transition-transform duration-200 ${checked ? "translate-x-4" : ""}`} />
+      <span className="ng-switch-track" aria-hidden="true">
+        <span className="ng-switch-knob" />
       </span>
       {label}
     </button>
@@ -149,21 +146,17 @@ export function Switch({ checked, onChange, label }: { checked: boolean; onChang
 }
 
 export function Panel({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <section className={`rounded-xl border border-line p-4 ${className}`}>{children}</section>;
+  return <section className={`ng-panel p-4 ${className}`}>{children}</section>;
 }
 
 export function Badge({ children, tone = "plain" }: { children: ReactNode; tone?: "plain" | "red" | "green" }) {
-  const look = {
-    plain: "bg-chip text-fg-2",
-    red: "bg-[color-mix(in_srgb,var(--brand)_20%,transparent)] text-fg",
-    green: "bg-[color-mix(in_srgb,#2ba640_22%,transparent)] text-fg",
-  }[tone];
-  return <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-xs font-medium ${look}`}>{children}</span>;
+  const look = { plain: "", red: "is-red", green: "is-green" }[tone];
+  return <span className={`ng-chip ${look}`}>{children}</span>;
 }
 
 export function ErrorNote({ children }: { children: ReactNode }) {
   return (
-    <p role="alert" className="rounded-lg bg-[color-mix(in_srgb,var(--danger)_15%,transparent)] px-3 py-2 text-sm">
+    <p role="alert" className="mb-4 border-l-2 border-[var(--danger)] bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] px-3 py-2 text-sm">
       {children}
     </p>
   );
@@ -180,4 +173,4 @@ export function SampleModeNote() {
   );
 }
 
-export const TABLE = "w-full border-collapse text-sm [&_td]:border-b [&_td]:border-line [&_td]:px-3 [&_td]:py-2.5 [&_th]:border-b [&_th]:border-line [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:text-xs [&_th]:font-medium [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-fg-2";
+export const TABLE = "ng-table w-full border-collapse text-sm [&_td]:border-b [&_td]:border-line [&_td]:px-3 [&_td]:py-2.5 [&_th]:border-b [&_th]:border-line [&_th]:px-3 [&_th]:py-2.5 [&_th]:text-left [&_th]:uppercase [&_th]:text-fg-2";

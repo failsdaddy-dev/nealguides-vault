@@ -109,7 +109,7 @@ export function FiltersAdmin() {
     <AdminFrame title="Filters">
       {error && <ErrorNote>{error}</ErrorNote>}
       <div className="mb-4 flex flex-wrap gap-3">
-        <label className="flex h-10 min-w-[240px] flex-1 items-center gap-2 rounded-full border border-[var(--search-border)] bg-[var(--search-bg)] px-3 vh-field">
+        <label className="flex h-10 min-w-[240px] flex-1 items-center gap-2 rounded-sm border border-[var(--search-border)] bg-[var(--search-bg)] px-3 vh-field">
           <SearchIcon size={18} className="text-fg-2" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search ${filters.length} filters`} aria-label="Search filters" className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none" />
         </label>
@@ -137,7 +137,7 @@ export function FiltersAdmin() {
           return (
             <Panel key={g.id}>
               <div className="flex flex-wrap items-center gap-2">
-                <button type="button" aria-expanded={expanded} aria-label={`${expanded ? "Collapse" : "Expand"} ${g.name}`} onClick={() => setOpen((o) => ({ ...o, [g.id]: !expanded }))} className="grid size-8 place-items-center rounded-full hover:bg-hover">
+                <button type="button" aria-expanded={expanded} aria-label={`${expanded ? "Collapse" : "Expand"} ${g.name}`} onClick={() => setOpen((o) => ({ ...o, [g.id]: !expanded }))} className="ng-icon-btn is-sm">
                   <ChevronDown size={18} className={`transition-transform duration-200 ${expanded ? "" : "-rotate-90"}`} />
                 </button>
                 <InlineName value={g.name} label="Group name" onSave={(name) => run(() => updateGroup(g.id, { name }), "Renamed")} />

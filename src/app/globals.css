@@ -154,7 +154,8 @@ select:focus-visible {
 .vh-menu {
   padding: 6px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-top-color: color-mix(in srgb, var(--green) 60%, var(--line));
+  border-radius: 3px;
   background: var(--menu);
   color: var(--fg);
   box-shadow: 0 18px 48px -16px rgba(0, 0, 0, 0.6);
@@ -1086,12 +1087,15 @@ select {
   clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
 }
 .ng-filter:hover { color: var(--fg); border-color: color-mix(in srgb, var(--green) 50%, var(--line)); }
-.ng-filter[aria-pressed="true"] {
+.ng-filter[aria-pressed="true"],
+.ng-filter[aria-checked="true"] {
   border-color: var(--green);
   background: var(--green);
   color: var(--navy);
 }
 .ng-filter:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--fg); }
+.ng-filter:disabled { cursor: not-allowed; opacity: 0.5; }
+.ng-filter.is-sm { height: 28px; padding: 0 10px; font-size: 12px; }
 
 /* Section title bar and subsection tabs. */
 .ng-section-head {
@@ -1436,6 +1440,284 @@ body:has(.ng-intro:not(.ng-intro--exit)) .vh-hero-in {
 
 @media (prefers-reduced-motion: reduce) {
   .ng-intro { display: none; }
+}
+
+/* ------------------------------------------------------- HUD controls
+   Phase 3 part 2: top bar, search, dialogs, music dock, account menu,
+   admin screens. Position is never set on the element itself here, so
+   fixed / absolute / relative utilities keep working. */
+
+/* Square icon button with angled corners. */
+.ng-icon-btn {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid transparent;
+  color: var(--fg);
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+  transition: color var(--dur-1) var(--ease), background-color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+}
+.ng-icon-btn.is-sm { width: 36px; height: 36px; }
+.ng-icon-btn:enabled:hover {
+  color: var(--green);
+  border-color: color-mix(in srgb, var(--green) 45%, var(--line));
+  background: color-mix(in srgb, var(--green) 8%, transparent);
+}
+.ng-icon-btn:enabled:active { transform: scale(0.94); }
+.ng-icon-btn[aria-pressed="true"] { color: var(--green); border-color: color-mix(in srgb, var(--green) 55%, var(--line)); }
+.ng-icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.ng-icon-btn:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--fg); }
+
+/* Top search bar: angled field, green scan line on focus. */
+.ng-search {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  width: 100%;
+  max-width: 640px;
+  border: 1px solid var(--search-border);
+  background: var(--search-bg);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+.ng-search:hover { border-color: var(--line-strong); }
+.ng-search:focus-within {
+  border-color: color-mix(in srgb, var(--green) 70%, var(--search-border));
+  box-shadow: inset 0 -2px 0 var(--green), inset 0 0 22px -10px color-mix(in srgb, var(--green) 60%, transparent);
+}
+.ng-search-icon { color: var(--fg-2); transition: color var(--dur-2) var(--ease); }
+.ng-search:focus-within .ng-search-icon { color: var(--green); }
+.ng-search-go {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  width: 58px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--search-border);
+  background: var(--search-btn);
+  color: var(--fg);
+  transition: background-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.ng-search-go:hover { background: var(--green); color: var(--navy); }
+.ng-search-go:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--fg); }
+/* Keyboard hint: "/" focuses the search box. */
+.ng-kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  color: var(--fg-2);
+  font-family: var(--font-heading), "Chakra Petch", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+.ng-search:focus-within .ng-kbd { display: none; }
+
+/* Framed surface for dialogs, the music dock and menus: four green corner
+   brackets. Give it relative / fixed / absolute with a utility. Base in a
+   layer so utilities (rounded-none, border-0) can adjust it. */
+@layer components {
+  .ng-frame {
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: linear-gradient(180deg, var(--bg-elev-2), var(--menu) 40%, var(--bg-elev));
+    box-shadow: 0 28px 70px -24px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(0, 0, 0, 0.25);
+  }
+}
+.ng-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  --c: color-mix(in srgb, var(--green) 70%, transparent);
+  background:
+    linear-gradient(var(--c), var(--c)) top left / 14px 2px,
+    linear-gradient(var(--c), var(--c)) top left / 2px 14px,
+    linear-gradient(var(--c), var(--c)) top right / 14px 2px,
+    linear-gradient(var(--c), var(--c)) top right / 2px 14px,
+    linear-gradient(var(--c), var(--c)) bottom left / 14px 2px,
+    linear-gradient(var(--c), var(--c)) bottom left / 2px 14px,
+    linear-gradient(var(--c), var(--c)) bottom right / 14px 2px,
+    linear-gradient(var(--c), var(--c)) bottom right / 2px 14px;
+  background-repeat: no-repeat;
+}
+.ng-frame-head {
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--green) 7%, transparent), transparent 60%);
+}
+.ng-frame-title {
+  font-family: var(--font-heading), "Chakra Petch", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Video inside a dialog: faint scanlines and a status readout. */
+.ng-screen {
+  position: relative;
+  background: #000;
+  border-bottom: 1px solid var(--line);
+}
+.ng-screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 3px);
+}
+.ng-screen-readout {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 9px;
+  border: 1px solid color-mix(in srgb, var(--green) 45%, transparent);
+  background: rgba(5, 5, 14, 0.72);
+  color: var(--fg);
+  font-family: var(--font-heading), "Chakra Petch", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  backdrop-filter: blur(4px);
+}
+
+/* Account avatar: angled tile with the initials. */
+.ng-avatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--green) 55%, var(--line));
+  background: linear-gradient(135deg, var(--navy-2), var(--navy));
+  color: var(--fg);
+  font-family: var(--font-heading), "Chakra Petch", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+.ng-avatar-btn:hover .ng-avatar,
+.ng-avatar-btn[aria-expanded="true"] .ng-avatar { border-color: var(--green); box-shadow: inset 0 0 12px -4px var(--green); }
+.ng-avatar-btn:focus-visible { outline: none; }
+.ng-avatar-btn:focus-visible .ng-avatar { box-shadow: inset 0 0 0 2px var(--fg); }
+
+/* Menu rows in HUD caps. */
+.ng-menu-item {
+  border-left: 2px solid transparent;
+  font-family: var(--font-heading), "Chakra Petch", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.ng-menu-item:hover,
+.ng-menu-item:focus-visible { border-left-color: var(--green); }
+
+/* Tag chip tones (admin badges). */
+.ng-chip.is-green { color: var(--green); border-color: color-mix(in srgb, var(--green) 45%, var(--line)); background: color-mix(in srgb, var(--green) 8%, transparent); }
+.ng-chip.is-red { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); background: color-mix(in srgb, var(--danger) 8%, transparent); }
+
+/* Music dock: square track, diamond thumb, HUD time readout. */
+.vh-range::-webkit-slider-runnable-track { border-radius: 0; }
+.vh-range::-moz-range-track { border-radius: 0; }
+.vh-range::-webkit-slider-thumb {
+  border-radius: 1px;
+  transform: rotate(45deg);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--green) 70%, transparent);
+}
+.vh-range::-moz-range-thumb { border-radius: 1px; }
+.vh-range:hover::-webkit-slider-thumb,
+.vh-range:focus-visible::-webkit-slider-thumb { transform: rotate(45deg) scale(1.25); }
+.ng-time {
+  font-family: var(--font-heading), "Chakra Petch", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Admin controls. In a layer so size and padding utilities on the same
+   element (h-9, px-4) win. */
+@layer components {
+  .ng-abtn {
+    border: 1px solid var(--line);
+    border-radius: 0;
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--fg);
+    font-family: var(--font-heading), "Chakra Petch", sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+  }
+  .ng-abtn:enabled:hover,
+  a.ng-abtn:hover { border-color: var(--green); color: var(--green); background: color-mix(in srgb, var(--green) 8%, transparent); }
+  .ng-abtn.is-ghost { border-color: transparent; background: transparent; }
+  .ng-abtn.is-danger { border-color: color-mix(in srgb, var(--danger) 60%, var(--line)); color: var(--danger); background: color-mix(in srgb, var(--danger) 8%, transparent); }
+  .ng-abtn.is-danger:enabled:hover { border-color: var(--danger); color: var(--danger); background: color-mix(in srgb, var(--danger) 16%, transparent); }
+  .ng-abtn:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--fg); }
+
+  .ng-label {
+    color: var(--fg-2);
+    font-family: var(--font-heading), "Chakra Petch", sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  /* Toggle switch: square track and knob, green glow when on. */
+  .ng-switch-track {
+    position: relative;
+    width: 38px;
+    height: 20px;
+    flex-shrink: 0;
+    border: 1px solid var(--line-strong);
+    border-radius: 2px;
+    background: var(--search-bg);
+    transition: background-color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+  }
+  .ng-switch-knob {
+    position: absolute;
+    left: 2px;
+    top: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 1px;
+    background: var(--fg-2);
+    transition: transform var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease);
+  }
+  [aria-checked="true"] > .ng-switch-track {
+    border-color: var(--green);
+    background: color-mix(in srgb, var(--green) 22%, transparent);
+    box-shadow: 0 0 10px -2px color-mix(in srgb, var(--green) 70%, transparent);
+  }
+  [aria-checked="true"] > .ng-switch-track > .ng-switch-knob { transform: translateX(18px); background: var(--green); }
+  [role="switch"]:hover > .ng-switch-track { border-color: color-mix(in srgb, var(--green) 55%, var(--line-strong)); }
+  [role="switch"]:focus-visible { outline: none; }
+  [role="switch"]:focus-visible > .ng-switch-track { box-shadow: 0 0 0 2px var(--fg); }
+
+  /* Admin tables: HUD header row, row highlight on hover. */
+  .ng-table th {
+    background: color-mix(in srgb, var(--bg-elev-2) 60%, transparent);
+    font-family: var(--font-heading), "Chakra Petch", sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+  }
+  .ng-table tbody tr { transition: background-color var(--dur-1) var(--ease); }
+  .ng-table tbody tr:hover { background: var(--hover); }
 }
 
 @media (prefers-reduced-motion: reduce) {

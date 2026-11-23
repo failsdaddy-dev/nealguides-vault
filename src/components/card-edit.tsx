@@ -120,7 +120,7 @@ export function CardEditProvider({ children }: { children: ReactNode }) {
   const value = useMemo<CardEditValue | null>(() => (allowed ? { edit, subscribe } : null), [allowed, edit, subscribe]);
 
   const drawer = allowed && target && (
-    <Modal open={open} onClose={requestClose} title={`Edit: ${target.title}`} variant="drawer" returnFocus={opener}>
+    <Modal open={open} onClose={requestClose} title={`Edit: ${target.title}`} tag="Admin · Edit card" variant="drawer" returnFocus={opener}>
       {confirming && (
         <div role="alertdialog" aria-label="Unsaved changes" className="sticky top-0 z-20 flex flex-wrap items-center gap-3 border-b border-line bg-menu px-5 py-3 text-sm">
           <p className="flex-1 font-medium">Discard your unsaved changes?</p>
@@ -196,7 +196,7 @@ export function CardEditButton({
   const chip =
     look === "overlay"
       ? "bg-[var(--overlay)] text-white backdrop-blur-sm hover:bg-black/70"
-      : "bg-chip hover:bg-chip-hover";
+      : "ng-abtn hover:text-[var(--green)]";
   return (
     <button
       type="button"
@@ -209,7 +209,7 @@ export function CardEditButton({
         ctx.edit(card, beforeEdit ? null : from);
       }}
       // 32px chip with an invisible 40px touch target around it.
-      className={`vh-press relative inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-sm font-medium after:absolute after:-inset-1 after:content-[''] ${chip} ${className}`}
+      className={`vh-press relative inline-flex h-8 shrink-0 items-center gap-1.5 px-2.5 text-sm font-medium after:absolute after:-inset-1 after:content-[''] ${look === "overlay" ? "rounded-full" : ""} ${chip} ${className}`}
     >
       <PencilIcon size={16} />
       <span className={look === "card" ? "hidden @[260px]:inline" : look === "overlay" ? "sr-only" : ""}>Edit</span>

@@ -105,7 +105,7 @@ export function PreviewMaker({ source, onDone, onCancel }: { source: File; onDon
   };
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-line p-3">
+    <div className="ng-panel flex flex-col gap-3 p-3">
       <div className="text-sm">
         <p className="font-medium">Make a card preview from your video</p>
         <p className="text-xs text-fg-2">
@@ -143,7 +143,7 @@ export function PreviewMaker({ source, onDone, onCancel }: { source: File; onDon
         <div className="flex flex-col gap-3">
           <label className="flex flex-col gap-1 text-sm">
             <span className="flex justify-between">
-              <span className="font-medium">Start at</span>
+              <span className="ng-label">Start at</span>
               <span className="font-mono text-xs text-fg-2">
                 {formatTime(from)} → {formatTime(Math.min(duration, from + length))}
               </span>
@@ -161,7 +161,7 @@ export function PreviewMaker({ source, onDone, onCancel }: { source: File; onDon
             />
           </label>
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="font-medium">Length</span>
+            <span className="ng-label">Length</span>
             {LENGTHS.map((l) => (
               <button
                 key={l}
@@ -169,7 +169,7 @@ export function PreviewMaker({ source, onDone, onCancel }: { source: File; onDon
                 aria-pressed={length === l}
                 disabled={phase.kind === "making"}
                 onClick={() => setLength(l)}
-                className={`vh-press h-8 rounded-lg px-3 font-medium ${length === l ? "bg-chip-on-bg text-chip-on-fg" : "bg-chip hover:bg-chip-hover"}`}
+                className="vh-press ng-filter"
               >
                 {l} s
               </button>

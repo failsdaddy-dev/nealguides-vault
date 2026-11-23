@@ -105,7 +105,7 @@ export function AudioPreviewMaker({ source, onDone, onCancel }: { source: File; 
   const busy = phase.kind === "making";
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-line p-3">
+    <div className="ng-panel flex flex-col gap-3 p-3">
       <div className="text-sm">
         <p className="font-medium">Make a music preview from your track</p>
         <p className="text-xs text-fg-2">
@@ -163,7 +163,7 @@ export function AudioPreviewMaker({ source, onDone, onCancel }: { source: File; 
         <div className="flex flex-col gap-3">
           <label className="flex flex-col gap-1 text-sm">
             <span className="flex justify-between">
-              <span className="font-medium">Start at</span>
+              <span className="ng-label">Start at</span>
               <span className="font-mono text-xs text-fg-2">
                 {formatTime(from)} → {formatTime(from + length)}
               </span>

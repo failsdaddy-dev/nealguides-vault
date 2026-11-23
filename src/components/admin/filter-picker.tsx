@@ -35,7 +35,7 @@ export function FilterPicker({
 
   return (
     <div className="flex flex-col gap-2">
-      <label className="flex h-9 items-center gap-2 rounded-full border border-[var(--search-border)] bg-[var(--search-bg)] px-3 vh-field">
+      <label className="flex h-9 items-center gap-2 rounded-sm border border-[var(--search-border)] bg-[var(--search-bg)] px-3 vh-field">
         <SearchIcon size={16} className="text-fg-2" />
         <input
           autoFocus={autoFocus}
@@ -62,9 +62,7 @@ export function FilterPicker({
                       type="button"
                       aria-pressed={on}
                       onClick={() => onToggle(f.id)}
-                      className={`vh-press flex h-7 items-center gap-1 rounded-lg px-2.5 text-xs font-medium ${
-                        on ? "bg-chip-on-bg text-chip-on-fg" : "bg-chip hover:bg-chip-hover"
-                      }`}
+                      className="vh-press ng-filter is-sm"
                     >
                       {on && <CheckIcon size={14} />}
                       {f.name}

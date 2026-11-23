@@ -25,7 +25,7 @@ export function SubsectionsAdmin({ sections, subsections, run }: { sections: Sec
   return (
     <section className="mt-8">
       <p className="ng-tag">Subsections</p>
-      <h2 className="mt-2 text-2xl font-bold uppercase">Inside each section</h2>
+      <h2 className="mt-2 font-display text-2xl font-bold uppercase tracking-[0.04em]">Inside each section</h2>
       <p className="mt-1 text-sm text-fg-2">
         Optional groups inside a section, shown under it in the side menu. A card can be in one subsection or in the
         section&apos;s main list.

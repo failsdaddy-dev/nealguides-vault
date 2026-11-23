@@ -127,7 +127,7 @@ export function SectionsAdmin() {
         run={run}
       />
       <p className="ng-tag">Sections</p>
-      <h2 className="mb-4 mt-2 text-2xl font-bold uppercase">Pages in the side menu</h2>
+      <h2 className="mb-4 mt-2 font-display text-2xl font-bold uppercase tracking-[0.04em]">Pages in the side menu</h2>
       <Panel className="mb-4">
         <form
           className="flex flex-wrap items-end gap-3"
@@ -141,11 +141,11 @@ export function SectionsAdmin() {
           }}
         >
           <label className="flex flex-col gap-1.5 text-sm">
-            <span className="font-medium">New section</span>
+            <span className="ng-label">New section</span>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Transitions" className="w-60" />
           </label>
           <label className="flex flex-col gap-1.5 text-sm">
-            <span className="font-medium">Type (sets the card buttons)</span>
+            <span className="ng-label">Type (sets the card buttons)</span>
             <Select value={kind} onChange={(e) => setKind(e.target.value as SectionKind)} className="w-80">
               {KINDS.map((k) => (
                 <option key={k.value} value={k.value}>
@@ -156,7 +156,7 @@ export function SectionsAdmin() {
           </label>
           {groups.length > 0 && (
             <label className="flex flex-col gap-1.5 text-sm">
-              <span className="font-medium">In sidebar group</span>
+              <span className="ng-label">In sidebar group</span>
               <Select value={newGroup || groups[0]?.id} onChange={(e) => setNewGroup(e.target.value)} className="w-48">
                 {groups.map((g) => (
                   <option key={g.id} value={g.id}>

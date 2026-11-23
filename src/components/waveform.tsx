@@ -36,7 +36,7 @@ export const Waveform = memo(function Waveform({
   const row = (cls: string) => (
     <div className="absolute inset-0 flex items-center gap-[2px]">
       {values.map((v, i) => (
-        <span key={i} className={`flex-1 rounded-full ${cls}`} style={{ height: `${v * 100}%` }} />
+        <span key={i} className={`flex-1 rounded-[1px] ${cls}`} style={{ height: `${v * 100}%` }} />
       ))}
     </div>
   );

@@ -23,6 +23,7 @@ export function Modal({
   variant = "center",
   headerActions,
   returnFocus,
+  tag,
 }: {
   open: boolean;
   onClose: () => void;
@@ -34,6 +35,8 @@ export function Modal({
   headerActions?: ReactNode;
   /** Where focus goes on close (default: whatever had focus when it opened). */
   returnFocus?: HTMLElement | null;
+  /** Small green label above the title (HUD), e.g. "Clip preview". */
+  tag?: string;
 }) {
   const panel = useRef<HTMLDivElement>(null);
   // Stay mounted briefly after closing so the exit animation can play.
@@ -125,21 +128,24 @@ export function Modal({
         tabIndex={-1}
         className={
           drawer
-            ? `${open ? "vh-drawer-in" : "vh-drawer-out pointer-events-none"} relative flex h-full w-full max-w-[760px] flex-col overflow-hidden bg-menu shadow-2xl outline-none sm:border-l sm:border-line`
-            : `${open ? "vh-pop-in" : "vh-pop-out pointer-events-none"} relative flex max-h-[90vh] w-full flex-col overflow-hidden rounded-xl bg-menu shadow-2xl outline-none max-sm:max-h-full max-sm:h-full max-sm:rounded-none ${
+            ? `${open ? "vh-drawer-in" : "vh-drawer-out pointer-events-none"} ng-frame relative flex h-full w-full max-w-[760px] flex-col overflow-hidden rounded-none outline-none max-sm:border-0`
+            : `${open ? "vh-pop-in" : "vh-pop-out pointer-events-none"} ng-frame relative flex max-h-[90vh] w-full flex-col overflow-hidden outline-none max-sm:h-full max-sm:max-h-full max-sm:rounded-none max-sm:border-0 ${
                 wide ? "max-w-[960px]" : "max-w-[560px]"
               }`
         }
       >
-        <div className={`flex items-center justify-between gap-4 px-5 py-3 ${drawer ? "border-b border-line" : ""}`}>
-          <h2 className="truncate text-base font-medium">{title}</h2>
+        <div className="ng-frame-head flex items-center justify-between gap-4 py-2.5 pl-5 pr-3">
+          <div className="min-w-0">
+            {tag && <p className="ng-tag mb-1.5 text-[10px]">{tag}</p>}
+            <h2 className="ng-frame-title truncate text-base">{title}</h2>
+          </div>
           <div className="flex shrink-0 items-center gap-1">
             {headerActions}
             <button
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="vh-press no-lift grid size-10 shrink-0 place-items-center rounded-full hover:bg-hover"
+              className="ng-icon-btn"
             >
               <CloseIcon />
             </button>

@@ -138,7 +138,7 @@ export function CardsAdmin() {
     <AdminFrame title="Cards" actions={<ButtonLink href="/admin/cards/new" primary>New card</ButtonLink>}>
       {error && <ErrorNote>{error}</ErrorNote>}
       <div className="mb-4 flex flex-wrap gap-3">
-        <label className="flex h-10 min-w-[240px] flex-1 items-center gap-2 rounded-full border border-[var(--search-border)] bg-[var(--search-bg)] px-3 vh-field">
+        <label className="flex h-10 min-w-[240px] flex-1 items-center gap-2 rounded-sm border border-[var(--search-border)] bg-[var(--search-bg)] px-3 vh-field">
           <SearchIcon size={18} className="text-fg-2" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search cards" aria-label="Search cards" className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none" />
         </label>

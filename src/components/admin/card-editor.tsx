@@ -503,7 +503,7 @@ export function CardEditor({
         </Panel>
 
         <Panel className="flex flex-col gap-3">
-          <p className="font-medium">Media</p>
+          <p className="ng-label">Media</p>
           <div className="flex gap-2" role="radiogroup" aria-label="Media type">
             {(["youtube", "image", "audio"] as const).map((m) => (
               <button
@@ -512,7 +512,7 @@ export function CardEditor({
                 role="radio"
                 aria-checked={f.mediaType === m}
                 onClick={() => setF((s) => ({ ...s, mediaType: m, mediaTouched: true }))}
-                className={`vh-press h-8 rounded-lg px-3 text-sm font-medium ${f.mediaType === m ? "bg-chip-on-bg text-chip-on-fg" : "bg-chip hover:bg-chip-hover"}`}
+                className="vh-press ng-filter"
               >
                 {m === "youtube" ? "Video (clip)" : m === "image" ? "Image (still)" : "Audio (MP3)"}
               </button>
@@ -530,7 +530,7 @@ export function CardEditor({
         {f.mediaType === "youtube" ? (
           <>
             <Panel className="flex flex-col gap-3">
-              <p className="font-medium">Preview clip</p>
+              <p className="ng-label">Preview clip</p>
               <p className="-mt-1 text-xs text-fg-2">
                 A short silent loop shown on the card (like CapCut’s effect tiles), with no YouTube buttons. Choose the effect file itself (any size); you pick up to 10 seconds.
               </p>
@@ -540,7 +540,7 @@ export function CardEditor({
           </>
         ) : f.mediaType === "image" ? (
           <Panel className="flex flex-col gap-3">
-            <p className="font-medium">Preview image</p>
+            <p className="ng-label">Preview image</p>
             <p className="-mt-1 text-xs text-fg-2">
               A still shown on the card (JPG, PNG or WebP, up to 1 MB; bigger images are shrunk in your browser). The full-quality file goes under Downloads.
             </p>
@@ -548,7 +548,7 @@ export function CardEditor({
           </Panel>
         ) : (
           <Panel className="flex flex-col gap-3">
-            <p className="font-medium">Music preview (MP3)</p>
+            <p className="ng-label">Music preview (MP3)</p>
             <p className="-mt-1 text-xs text-fg-2">
               Choose the full track (any size); you pick the 30 seconds and the browser makes a small MP3 preview. Add the full track under Downloads.
             </p>
@@ -592,7 +592,7 @@ export function CardEditor({
 
       <div className="flex min-w-0 flex-col gap-6">
         <Panel className="flex flex-col gap-3">
-          <p className="font-medium">Status</p>
+          <p className="ng-label">Status</p>
           <div className="flex gap-2">
             {(["draft", "published"] as const).map((s) => (
               <button
@@ -600,7 +600,7 @@ export function CardEditor({
                 type="button"
                 aria-pressed={f.status === s}
                 onClick={() => set("status", s)}
-                className={`vh-press h-8 rounded-lg px-3 text-sm font-medium ${f.status === s ? "bg-chip-on-bg text-chip-on-fg" : "bg-chip hover:bg-chip-hover"}`}
+                className="vh-press ng-filter"
               >
                 {s === "draft" ? "Draft" : "Published"}
               </button>
@@ -609,7 +609,7 @@ export function CardEditor({
           <p className="text-xs text-fg-2">Drafts are visible only to admins.</p>
         </Panel>
         <Panel className="flex flex-col gap-3">
-          <p className="font-medium">Tags · {f.filterIds.size}</p>
+          <p className="ng-label">Tags · {f.filterIds.size}</p>
           {tax && (
             <FilterPicker
               groups={tax.groups}
@@ -640,7 +640,7 @@ export function CardEditor({
         {form}
         <div className="sticky bottom-0 z-10 flex flex-col gap-3 border-t border-line bg-menu px-5 py-3">
           {conflict && (
-            <div role="alert" className="flex flex-col gap-2 rounded-lg bg-chip p-3 text-sm">
+            <div role="alert" className="flex flex-col gap-2 border-l-2 border-[var(--danger)] bg-chip p-3 text-sm">
               <p>
                 <span className="font-medium">Someone else changed this card since you opened it.</span> Saving now would replace their changes.
               </p>

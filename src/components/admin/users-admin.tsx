@@ -132,7 +132,7 @@ function UserForm({
       <div className="flex flex-col gap-3">
         <Switch checked={d.allAccess} onChange={(v) => setD({ ...d, allAccess: v })} label="All access (sees every published card; on by default)" />
         {!d.allAccess && (
-          <div className="rounded-xl border border-line p-3">
+          <div className="ng-panel p-3">
             <p className="mb-2 text-sm font-medium">Can see cards with any of these filters · {d.filterIds.size}</p>
             <FilterPicker
               groups={groups}

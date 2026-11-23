@@ -216,7 +216,7 @@ function AudioDock({ track, onClose }: { track: Track; onClose: () => void }) {
     <section
       aria-label={`Audio player: ${track.title}`}
       onKeyDown={onKey}
-      className="vh-dock-in fixed z-[60] flex flex-col gap-3 border border-line bg-menu p-4 shadow-2xl max-sm:inset-x-0 max-sm:bottom-0 max-sm:rounded-t-[22px] max-sm:pb-[max(16px,env(safe-area-inset-bottom))] sm:bottom-4 sm:right-4 sm:w-[400px] sm:rounded-[22px]"
+      className="vh-dock-in ng-frame fixed z-[60] flex flex-col gap-3 p-4 max-sm:inset-x-0 max-sm:bottom-0 max-sm:rounded-none max-sm:border-x-0 max-sm:border-b-0 max-sm:pb-[max(16px,env(safe-area-inset-bottom))] sm:bottom-4 sm:right-4 sm:w-[400px]"
     >
       <audio
         ref={audio}
@@ -247,11 +247,15 @@ function AudioDock({ track, onClose }: { track: Track; onClose: () => void }) {
 
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold">{track.title}</p>
+          <p className={`ng-tag no-bar gap-2 text-[10px] ${playing ? "" : "text-fg-2"}`}>
+            {playing ? <span className="ng-dot" aria-hidden="true" /> : <span className="size-[7px] bg-fg-2" aria-hidden="true" />}
+            {playing ? "Now playing" : "Paused"} · Preview
+          </p>
+          <p className="ng-frame-title mt-1.5 truncate text-[15px]">{track.title}</p>
           {chips.length > 0 && (
-            <div className="mt-1 flex flex-wrap gap-1.5 text-xs text-fg-2">
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
               {chips.slice(0, 4).map((c) => (
-                <span key={c} className="rounded-md bg-chip px-1.5 py-0.5">
+                <span key={c} className="ng-chip">
                   {c}
                 </span>
               ))}
@@ -264,7 +268,7 @@ function AudioDock({ track, onClose }: { track: Track; onClose: () => void }) {
           type="button"
           onClick={onClose}
           aria-label="Close player"
-          className="vh-press no-lift -mr-1 -mt-1 grid size-9 shrink-0 place-items-center rounded-full hover:bg-hover"
+          className="ng-icon-btn is-sm -mr-1 -mt-1"
         >
           <CloseIcon size={18} />
         </button>
@@ -278,7 +282,7 @@ function AudioDock({ track, onClose }: { track: Track; onClose: () => void }) {
           onClick={toggle}
           disabled={state === "error"}
           aria-label={playing ? "Pause" : "Play"}
-          className="vh-press no-lift grid size-11 shrink-0 place-items-center rounded-full bg-brand text-brand-fg disabled:opacity-50"
+          className="vh-press grid size-11 shrink-0 place-items-center bg-brand text-brand-fg disabled:opacity-50"
         >
           {playing ? <PauseIcon size={20} /> : <PlayIcon size={20} />}
         </button>
@@ -295,7 +299,7 @@ function AudioDock({ track, onClose }: { track: Track; onClose: () => void }) {
             className="vh-range"
             style={{ ["--fill" as string]: `${progress * 100}%`, ["--buf" as string]: `${buffered * 100}%` }}
           />
-          <div className="flex justify-between font-mono text-xs tabular-nums text-fg-2">
+          <div className="ng-time flex justify-between text-fg-2">
             <span>{formatTime(time)}</span>
             <span aria-live="polite" className="font-sans">
               {status}
@@ -311,7 +315,7 @@ function AudioDock({ track, onClose }: { track: Track; onClose: () => void }) {
           onClick={toggleMute}
           aria-label={muted ? "Unmute" : "Mute"}
           aria-pressed={muted}
-          className="vh-press no-lift grid size-9 shrink-0 place-items-center rounded-full hover:bg-hover"
+          className="ng-icon-btn is-sm"
         >
           {muted || volume === 0 ? <VolumeOffIcon size={18} /> : <VolumeIcon size={18} />}
         </button>
@@ -334,13 +338,13 @@ function AudioDock({ track, onClose }: { track: Track; onClose: () => void }) {
           onClick={() => setLoop((l) => !l)}
           aria-label="Loop"
           aria-pressed={loop}
-          className={`vh-press no-lift grid size-9 shrink-0 place-items-center rounded-full hover:bg-hover ${loop ? "text-brand" : ""}`}
+          className="ng-icon-btn is-sm"
         >
           <LoopIcon size={18} />
         </button>
         <div className="flex-1" />
         {state === "error" && (
-          <button type="button" onClick={retry} className="vh-press h-9 rounded-full bg-chip px-3 text-sm font-medium hover:bg-chip-hover">
+          <button type="button" onClick={retry} className="ng-act h-9 px-3 text-xs">
             Retry
           </button>
         )}

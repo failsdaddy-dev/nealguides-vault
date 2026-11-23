@@ -46,15 +46,15 @@ export function AdminOverview() {
     <AdminFrame title="Overview" actions={<ButtonLink href="/admin/cards/new" primary>New card</ButtonLink>}>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {tiles.map((t) => (
-          <Link key={t.label} href={t.href} className="rounded-xl border border-line p-4 hover:bg-hover">
-            <p className="text-sm text-fg-2">{t.label}</p>
-            <p className="mt-1 text-3xl font-semibold tabular-nums">{t.value ?? "–"}</p>
+          <Link key={t.label} href={t.href} className="ng-panel is-interactive block p-4">
+            <p className="ng-label">{t.label}</p>
+            <p className="ng-glow mt-2 font-display text-4xl font-bold tabular-nums">{t.value ?? "–"}</p>
           </Link>
         ))}
       </div>
       <Panel className="mt-6">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-medium">Latest activity</h2>
+          <h2 className="ng-tag">Latest activity</h2>
           <Link href="/admin/audit" className="text-sm text-focus hover:underline">
             Full audit log
           </Link>

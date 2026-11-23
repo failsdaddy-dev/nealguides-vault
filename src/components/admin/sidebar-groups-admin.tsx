@@ -54,7 +54,7 @@ export function SidebarGroupsAdmin({
   return (
     <section className="mb-8">
       <p className="ng-tag">Side menu</p>
-      <h2 className="mt-2 text-2xl font-bold uppercase">Sidebar groups</h2>
+      <h2 className="mt-2 font-display text-2xl font-bold uppercase tracking-[0.04em]">Sidebar groups</h2>
       <p className="mt-1 text-sm text-fg-2">
         The top-level buttons of the side menu, like <b className="text-fg">Vault</b>. Tapping one opens its sections.
         Add as many as you need (for example a group for social videos), then choose each section&apos;s group in the

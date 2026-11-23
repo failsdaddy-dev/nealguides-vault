@@ -1,12 +1,12 @@
 # NealGuides Vault: Project Specification
 
-Status: APPROVED (Step 0 answers received 2026-11-20). Phase 1 done, Phase 2 done (database live), Phase 3 part 1 done. See **Build log and current state** below before doing anything; it is the up-to-date context.
+Status: APPROVED (Step 0 answers received 2026-11-20). Phase 1 done, Phase 2 done (database live), Phase 3 parts 1 and 2 done (manual test pending). See **Build log and current state** below before doing anything; it is the up-to-date context.
 
 Reference project (read-only): `C:\Agents\rohtre-vault`.
 
 ## Build log and current state (keep this updated)
 
-Last updated: 2026-11-20. This section is the working memory of the build.
+Last updated: 2026-11-23. This section is the working memory of the build.
 It holds no secrets (keys live only in git-ignored files).
 
 ### Where things are
@@ -67,7 +67,7 @@ Same powers as RohTre's (checked file by file) plus: subsections per section, ca
 - **Phase 1** (foundation): done.
 - **Phase 2** (data and admin): done; database live, functions deployed, RLS 78/78.
 - **Phase 3** (vault experience): **part 1 done** (icons, sidebar with subsection dropdowns, section header and subsection tabs, HUD cards incl. Shorts and image cards, host badges, card page with files list, filter chips, skeletons, empty states).
-  - **Part 2 to do:** top search bar, clip pop-up (video modal), bottom music player bar, account menu, admin screens in full HUD style; then the Phase 3 manual test.
+  - **Part 2 done (2026-11-23):** HUD restyle of the top bar (angled search, "/" focuses search), every dialog (`ng-frame` with corner brackets, tag + caps title; clip pop-up has a framed screen with a PREVIEW readout), music dock (frame, NOW PLAYING tag, angled play button, diamond seek thumb, square waveform bars), account menu (angled avatar, role chip), admin screens (tab bar, HUD buttons `ng-abtn`, labels `ng-label`, square switches, framed panels, HUD tables, stat tiles). Styles: "HUD controls" block at the end of `globals.css`. Next: the owner runs the Phase 3 manual test.
 - **Phase 4** (polish and handover): not started (accessibility, phone/tablet checks, security review notes, README, Vercel deploy, domain).
 
 ### Known notes
