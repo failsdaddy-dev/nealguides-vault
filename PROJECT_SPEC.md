@@ -1,6 +1,6 @@
 # NealGuides Vault: Project Specification
 
-Status: APPROVED (Step 0 answers received 2026-11-20). Phase 1 done, Phase 2 done (database live), Development complete: Phases 1-4 done and manually tested by the owner (2026-11-23). Remaining: launch steps only (Vercel deploy + domain, remove TEST content, dev -> main). See **Build log and current state** below before doing anything; it is the up-to-date context.
+Status: APPROVED (Step 0 answers received 2026-11-20). Development complete: Phases 1-4 done and manually tested by the owner (2026-11-23). Remaining: launch steps only (Vercel deploy + domain, remove TEST content, dev -> main). See **Build log and current state** below before doing anything; it is the up-to-date context.
 
 Reference project (read-only): `C:\Agents\rohtre-vault`.
 
