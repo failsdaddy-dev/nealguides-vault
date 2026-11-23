@@ -83,7 +83,7 @@ function SectionItem({ s, i, onNavigate }: { s: Section; i: number; onNavigate?:
                   aria-current={active && !sub ? "page" : undefined}
                   className="ng-subnav-link"
                 >
-                  All {s.name.toLowerCase()}
+                  All {s.name}
                 </Link>
               </li>
               {subs.map((x) => (

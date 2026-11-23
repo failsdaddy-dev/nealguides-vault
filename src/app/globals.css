@@ -914,8 +914,11 @@ select {
   align-items: center;
   height: 34px;
   padding: 0 10px 0 20px;
-  font-size: 13px;
-  font-weight: 500;
+  font-family: var(--font-heading), "Chakra Petch", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--fg-2);
   transition: color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease);
 }
