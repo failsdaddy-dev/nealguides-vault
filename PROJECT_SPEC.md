@@ -1,6 +1,6 @@
 # NealGuides Vault: Project Specification
 
-Status: APPROVED (Step 0 answers received 2026-11-20). Phase 1 done, Phase 2 done (database live), Phase 3 done, Phase 4 code and docs done (manual tests and deploy pending). See **Build log and current state** below before doing anything; it is the up-to-date context.
+Status: APPROVED (Step 0 answers received 2026-11-20). Phase 1 done, Phase 2 done (database live), Development complete: Phases 1-4 done and manually tested by the owner (2026-11-23). Remaining: launch steps only (Vercel deploy + domain, remove TEST content, dev -> main). See **Build log and current state** below before doing anything; it is the up-to-date context.
 
 Reference project (read-only): `C:\Agents\rohtre-vault`.
 
@@ -70,7 +70,7 @@ Same powers as RohTre's (checked file by file) plus: subsections per section, ca
   - **Part 2 done (2026-11-23):** HUD restyle of the top bar (angled search, "/" focuses search), every dialog (`ng-frame` with corner brackets, tag + caps title; clip pop-up has a framed screen with a PREVIEW readout), music dock (frame, NOW PLAYING tag, angled play button, diamond seek thumb, square waveform bars), account menu (angled avatar, role chip), admin screens (tab bar, HUD buttons `ng-abtn`, labels `ng-label`, square switches, framed panels, HUD tables, stat tiles). Styles: "HUD controls" block at the end of `globals.css`. Next: the owner runs the Phase 3 manual test.
   - **Fixes after part 2 (2026-11-23):** header is a 3-column grid so the search sits exactly centred; the phone-only search button no longer shows on desktop (`.ng-icon-btn` base moved into `@layer components` so `sm:hidden` wins; same rule for any HUD class whose element also uses position/display utilities); subsection links in the side menu are HUD caps ("ALL FC GAMEPLAY CLIPS").
 - **Phase 4** (polish and handover): **code and docs done 2026-11-23**: phone menu drawer keeps keyboard focus inside (focus in on open, Tab trapped, Esc closes, focus back to the Menu button); HUD skip link; admin preview videos labelled; square filter search. `README.md` (setup, Supabase, Vercel deploy steps) and `docs/security-review.md` (access model, layers, open items) written.
-  - **Waiting on the owner:** Phase 3 + 4 manual tests (keyboard only; 375 / 768 / 1440 px), then the go for Vercel deploy and domain, removing TEST content, leaked password protection, admin password change.
+  - **Owner tested every screen (2026-11-23).** Waiting on the owner for the go for Vercel deploy and domain, removing TEST content, leaked password protection, admin password change.
 
 ### Known notes
 - The in-memory login rate limit counts per server instance; Supabase Auth limits apply on top.
