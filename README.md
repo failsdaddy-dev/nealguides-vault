@@ -78,6 +78,11 @@ Only when the owner says so.
 2. Set the production branch to `main`.
 3. Environment variables (Production, and Preview if previews are used):
    `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+   The owner's computer has a ready-to-paste `.env.vercel` (git-ignored, real
+   values): open it, copy everything, and paste it into Vercel → Project →
+   Settings → Environment Variables (the editor accepts pasted `.env` text).
+   These are the only two the web app needs; the Cloudinary keys stay in
+   Supabase function secrets and must not be added to Vercel.
 4. Deploy, then add the custom domain in Vercel → Project → Domains and set the
    DNS records Vercel shows.
 5. Add the live domain:

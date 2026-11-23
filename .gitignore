@@ -36,3 +36,6 @@ npm-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 *.pem
+
+# Vercel paste file (real values, never commit)
+.env.vercel
