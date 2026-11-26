@@ -263,7 +263,10 @@ export async function mergeFilters(fromId: string, intoId: string) {
 
 // --------------------------------------------------------------- sections
 export async function createSection(input: Pick<SectionRow, "name" | "slug" | "kind"> & { group_id?: string }) {
-  check(await sb().from("sections").insert(input));
+  // Without group_id the database puts the section in the default "Vault"
+  // group (sections_default_group trigger); the generated types can't see
+  // that trigger, so they mark group_id as required.
+  check(await sb().from("sections").insert(input as Tables["sections"]["Insert"]));
 }
 export async function updateSection(id: string, patch: Partial<SectionRow>) {
   check(await sb().from("sections").update(patch).eq("id", id));

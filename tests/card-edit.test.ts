@@ -31,11 +31,13 @@ const { saveCard, CardConflictError } = await import("@/lib/admin-api");
 
 const input = {
   section_id: "s1",
+  subsection_id: null,
   slug: "a",
   title: "A",
   description: "",
   media_type: "youtube" as const,
   preview_clip: null,
+  preview_image: null,
   audio_preview: null,
   loom_url: null,
   source_url: null,
