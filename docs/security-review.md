@@ -101,6 +101,6 @@ read it in Admin → Audit log.
 | Admin password | The first admin password was set before the 12-character rule | Change it in the account to one that meets the rule |
 | CSP allows `'unsafe-inline'` scripts | Weaker protection if an injection bug ever appeared | Nonce-based CSP is on the Later list |
 | Login throttle counts per server instance | On Vercel, several instances each keep their own count | Supabase Auth limits still apply; a shared store can be added later if needed |
-| TEST content is live | Test cards and tags show in the library | Remove before launch (steps in `PROJECT_SPEC.md`, "Test content") |
+| TEST content | Removed 2026-11-26 (cards, links, preview files, test tags) | Done |
 | Production domain | Edge Functions refuse requests from origins not in `ALLOWED_ORIGINS` | Add the live domain to `ALLOWED_ORIGINS` and to Supabase Auth URLs at deploy |
 | npm dev-only advisories | Only affect development tools, not the deployed app | Update when fixed upstream |

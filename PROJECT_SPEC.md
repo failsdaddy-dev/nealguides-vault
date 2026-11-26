@@ -1,6 +1,6 @@
 # NealGuides Vault: Project Specification
 
-Status: APPROVED (Step 0 answers received 2026-11-20). Development complete: Phases 1-4 done and manually tested by the owner (2026-11-23). Remaining: launch steps only (Vercel deploy + domain, remove TEST content, dev -> main). See **Build log and current state** below before doing anything; it is the up-to-date context.
+Status: APPROVED (Step 0 answers received 2026-11-20). Development complete: Phases 1-4 done and manually tested by the owner (2026-11-23). Remaining: launch steps only (dev -> main, Vercel deploy + domain). TEST content removed 2026-11-26. See **Build log and current state** below before doing anything; it is the up-to-date context.
 
 Reference project (read-only): `C:\Agents\rohtre-vault`.
 
@@ -57,7 +57,8 @@ Migrations in `supabase/migrations/`, all pushed and approved:
 ### Admin panel
 Same powers as RohTre's (checked file by file) plus: subsections per section, card subsection picker, image previews (shrunk to WebP in the browser when over 1 MB), link checks with live host badge, 20 links per card, new audit labels, all access on by default for new editors. The admin can create any section with any name; its type (gameplay/effect/music/background) sets the buttons and default preview.
 
-### Test content (live, remove before launch)
+### Test content (REMOVED 2026-11-26)
+- **Removed on the owner's call:** 13 TEST cards with their 39 example links, their 13 Cloudinary preview files (deleted by exact public_id), and the 2 test tag groups with 4 tags. Database after cleanup: 0 cards, 0 links; sections, sidebar groups and users kept. History of what was there:
 - 13 published **TEST** cards: FC Gameplay Clips 4 (+2 in Shorts, vertical), Effects 2, Music 2, Backgrounds 2 images + 1 loop. Media are original ffmpeg animations marked "TEST", uploaded to Cloudinary `nealguides-vault/`.
 - Each card has 3 example links (Google Drive, Mega, example.com) that are not real files.
 - Tag groups "Test style" and "Test format" (tags test-neon, test-retro, test-16x9, test-9x16).
