@@ -1,6 +1,6 @@
 # NealGuides Vault: Project Specification
 
-Status: APPROVED (Step 0 answers received 2026-11-20). Development complete: Phases 1-4 done and manually tested by the owner (2026-11-23). Remaining: launch steps only (dev -> main, Vercel deploy + domain). TEST content removed 2026-11-26. See **Build log and current state** below before doing anything; it is the up-to-date context.
+Status: APPROVED (Step 0 answers received 2026-11-20). Development complete: Phases 1-4 done and manually tested by the owner (2026-11-23). **LIVE 2026-11-26 at https://nealguides.rohtremedia.com** (Vercel, from `main`). Edge Function `ALLOWED_ORIGINS` = localhost:3000 + the live domain; Supabase Auth Site URL and redirect URLs set to the live domain. TEST content removed. See **Build log and current state** below before doing anything; it is the up-to-date context.
 
 Reference project (read-only): `C:\Agents\rohtre-vault`.
 
