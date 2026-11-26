@@ -49,7 +49,7 @@ Migrations in `supabase/migrations/`, all pushed and approved:
 4. `20261120100300_seed_sections.sql`: FC Gameplay Clips (+ Shorts), Effects, Music, Backgrounds.
 5. `20261120110000_lock_rls_auto_enable.sql`: revokes public execute on Supabase's own `rls_auto_enable()` (advisor warning).
 6. `20261120130000_sidebar_groups.sql`: `section_groups` (top-level side-menu buttons like Vault; Group > Section > Subsection), `sections.group_id`, hidden group hides its sections, non-empty group can't be deleted, reorder groups. Existing sections moved into "Vault".
-- **RLS test** `supabase/tests/rls_test.sql`: **87 passed, 0 failed** on the live database (it rolls itself back). Run with `npx supabase db query --linked -f supabase/tests/rls_test.sql`.
+- **RLS test** `supabase/tests/rls_test.sql`: **101 passed, 0 failed** (after the menu-access migration, 2026-11-26) on the live database (it rolls itself back). Run with `npx supabase db query --linked -f supabase/tests/rls_test.sql`.
 - Supabase security advisor: **no issues**.
 - `src/lib/database.types.ts` is generated from the live schema (`npx supabase gen types typescript --linked --schema public`).
 
