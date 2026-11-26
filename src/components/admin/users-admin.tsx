@@ -1,23 +1,24 @@
 "use client";
 
-// Users (R13, R14, R19): only the admin creates logins. Access is All or a set
-// of filters. Disable takes effect immediately (RLS checks is_active, and the
+// Users (R13, R14, R19): only the admin creates logins. Access is All, or a
+// set of side-menu items (groups, sections, subsections) the editor may see. Disable takes effect immediately (RLS checks is_active, and the
 // login is banned so the session can't refresh).
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   createUser,
+  emptyMenu,
+  listSidebarGroups,
   listUsers,
   loadTaxonomy,
   manageUser,
-  type FilterRow,
-  type GroupRow,
+  type MenuAccess,
   type UserWithAccess,
 } from "@/lib/admin-api";
 import { Modal } from "../modal";
 import { useHub } from "../hub-context";
 import { useToast } from "../toast";
-import { FilterPicker, FilterSummary } from "./filter-picker";
+import { MenuAccessPicker, MenuAccessSummary, type MenuTree } from "./menu-access-picker";
 import { AdminFrame, Badge, Button, ConfirmButton, ErrorNote, Field, Input, Switch, TABLE } from "./ui";
 
 /** Same rule as the server (admin Edge Functions, supabase/config.toml):
@@ -55,22 +56,25 @@ interface Draft {
   name: string;
   password: string;
   allAccess: boolean;
-  filterIds: Set<string>;
+  menu: MenuAccess;
   expires: string;
 }
+
+const menuCount = (m: MenuAccess) => m.group_ids.length + m.section_ids.length + m.subsection_ids.length;
 
 function UserForm({
   mode,
   initial,
-  groups,
-  filters,
+  tree,
+  showAccess = true,
   onCancel,
   onSubmit,
 }: {
   mode: "create" | "edit";
   initial: Draft;
-  groups: GroupRow[];
-  filters: FilterRow[];
+  tree: MenuTree;
+  /** Off for admins and your own account (admins always see everything). */
+  showAccess?: boolean;
   onCancel: () => void;
   onSubmit: (d: Draft) => Promise<void>;
 }) {
@@ -84,7 +88,9 @@ function UserForm({
       className="flex flex-col gap-4 px-5 pb-5"
       onSubmit={async (e) => {
         e.preventDefault();
-        if (!d.allAccess && d.filterIds.size === 0) return setError("Choose at least one tag, or turn on All access.");
+        if (showAccess && !d.allAccess && menuCount(d.menu) === 0) {
+          return setError("Choose at least one side-menu item, or turn on All access.");
+        }
         if (d.password) {
           const pw = passwordProblem(d.password);
           if (pw) return setError(pw);
@@ -129,26 +135,21 @@ function UserForm({
           </Field>
         )}
       </div>
-      <div className="flex flex-col gap-3">
-        <Switch checked={d.allAccess} onChange={(v) => setD({ ...d, allAccess: v })} label="All access (sees every published card; on by default)" />
-        {!d.allAccess && (
-          <div className="ng-panel p-3">
-            <p className="mb-2 text-sm font-medium">Can see cards with any of these filters · {d.filterIds.size}</p>
-            <FilterPicker
-              groups={groups}
-              filters={filters}
-              selected={d.filterIds}
-              maxHeight={260}
-              onToggle={(id) => {
-                const next = new Set(d.filterIds);
-                if (next.has(id)) next.delete(id);
-                else next.add(id);
-                setD({ ...d, filterIds: next });
-              }}
-            />
-          </div>
-        )}
-      </div>
+      {showAccess && (
+        <div className="flex flex-col gap-3">
+          <Switch checked={d.allAccess} onChange={(v) => setD({ ...d, allAccess: v })} label="All access (sees the whole side menu and every published card; on by default)" />
+          {!d.allAccess && (
+            <div className="ng-panel p-3">
+              <p className="ng-label">Can see only these side-menu items · {menuCount(d.menu)}</p>
+              <p className="mb-3 mt-1 text-xs text-fg-2">
+                Tick a group for everything in it, a section for the whole section, or single subsections. The editor sees
+                only these in the side menu, and only the cards inside them.
+              </p>
+              <MenuAccessPicker tree={tree} value={d.menu} onChange={(menu) => setD({ ...d, menu })} />
+            </div>
+          )}
+        </div>
+      )}
       {error && <ErrorNote>{error}</ErrorNote>}
       <div className="flex justify-end gap-2">
         <Button variant="ghost" onClick={onCancel}>Cancel</Button>
@@ -164,7 +165,7 @@ export function UsersAdmin() {
   const toast = useToast();
   const { user: me } = useHub();
   const [users, setUsers] = useState<UserWithAccess[]>([]);
-  const [tax, setTax] = useState<{ groups: GroupRow[]; filters: FilterRow[] }>({ groups: [], filters: [] });
+  const [tree, setTree] = useState<MenuTree>({ groups: [], sections: [], subsections: [] });
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<UserWithAccess | null>(null);
@@ -173,9 +174,9 @@ export function UsersAdmin() {
 
   const load = useCallback(async () => {
     try {
-      const [u, t] = await Promise.all([listUsers(), loadTaxonomy()]);
+      const [u, t, g] = await Promise.all([listUsers(), loadTaxonomy(), listSidebarGroups()]);
       setUsers(u);
-      setTax({ groups: t.groups, filters: t.filters });
+      setTree({ groups: g, sections: t.sections, subsections: t.subsections });
     } catch (e) {
       setError((e as Error).message);
     }
@@ -230,7 +231,7 @@ export function UsersAdmin() {
                   <td>
                     <Badge tone={s.tone}>{s.label}</Badge>
                   </td>
-                  <td className="max-w-[240px]">{u.all_access || u.role === "admin" ? "All" : <FilterSummary ids={u.filter_ids} filters={tax.filters} />}</td>
+                  <td className="max-w-[240px]">{u.all_access || u.role === "admin" ? "All" : <MenuAccessSummary tree={tree} value={u.menu} />}</td>
                   <td className="whitespace-nowrap">{u.expires_at ? new Date(u.expires_at).toLocaleDateString() : "Never"}</td>
                   <td>
                     <div className="flex flex-wrap justify-end gap-1">
@@ -262,9 +263,8 @@ export function UsersAdmin() {
         {creating && (
           <UserForm
             mode="create"
-            initial={{ email: "", name: "", password: tempPassword(), allAccess: true, filterIds: new Set(), expires: "" }}
-            groups={tax.groups}
-            filters={tax.filters}
+            initial={{ email: "", name: "", password: tempPassword(), allAccess: true, menu: emptyMenu(), expires: "" }}
+            tree={tree}
             onCancel={() => setCreating(false)}
             onSubmit={async (d) => {
               await createUser({
@@ -272,7 +272,7 @@ export function UsersAdmin() {
                 password: d.password,
                 display_name: d.name.trim(),
                 all_access: d.allAccess,
-                filter_ids: [...d.filterIds],
+                menu: d.allAccess ? emptyMenu() : d.menu,
                 expires_at: fromDateInput(d.expires),
               });
               setCreating(false);
@@ -292,16 +292,16 @@ export function UsersAdmin() {
               name: editing.display_name,
               password: "",
               allAccess: editing.all_access,
-              filterIds: new Set(editing.filter_ids),
+              menu: editing.menu,
               expires: toDateInput(editing.expires_at),
             }}
-            groups={tax.groups}
-            filters={tax.filters}
+            tree={tree}
+            showAccess={editing.id !== me.id && editing.role !== "admin"}
             onCancel={() => setEditing(null)}
             onSubmit={async (d) => {
               await manageUser("update", editing.id, { display_name: d.name, expires_at: fromDateInput(d.expires) });
-              if (editing.id !== me.id) {
-                await manageUser("set_access", editing.id, { all_access: d.allAccess, filter_ids: [...d.filterIds] });
+              if (editing.id !== me.id && editing.role !== "admin") {
+                await manageUser("set_access", editing.id, { all_access: d.allAccess, menu: d.allAccess ? emptyMenu() : d.menu });
               }
               setEditing(null);
               toast("Saved");

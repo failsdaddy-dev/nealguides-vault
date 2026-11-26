@@ -107,3 +107,36 @@ export async function readJson(req: Request): Promise<Record<string, unknown> | 
     return null;
   }
 }
+
+// ------------------------------------------------------------ menu access
+// Restricted editors (all_access off) see only the side-menu items the admin
+// ticks: whole groups, whole sections, or single subsections.
+export interface MenuAccess {
+  group_ids: string[];
+  section_ids: string[];
+  subsection_ids: string[];
+}
+const MAX_MENU_ITEMS = 500;
+
+/** Reads `menu` from a request body; unknown values are dropped. */
+export function readMenu(v: unknown): MenuAccess {
+  const o = v && typeof v === "object" ? (v as Record<string, unknown>) : {};
+  const ids = (x: unknown) => [...new Set(Array.isArray(x) ? x.filter(isUuid) : [])].slice(0, MAX_MENU_ITEMS);
+  return { group_ids: ids(o.group_ids), section_ids: ids(o.section_ids), subsection_ids: ids(o.subsection_ids) };
+}
+export const menuSize = (m: MenuAccess) => m.group_ids.length + m.section_ids.length + m.subsection_ids.length;
+
+/** Replaces the user's menu access. Returns an error message or null. */
+export async function saveMenu(userId: string, m: MenuAccess): Promise<string | null> {
+  const { error: delErr } = await admin.from("user_menu_access").delete().eq("user_id", userId);
+  if (delErr) return "Couldn't save the access list.";
+  const rows = [
+    ...m.group_ids.map((group_id) => ({ user_id: userId, group_id })),
+    ...m.section_ids.map((section_id) => ({ user_id: userId, section_id })),
+    ...m.subsection_ids.map((subsection_id) => ({ user_id: userId, subsection_id })),
+  ];
+  if (!rows.length) return null;
+  const { error } = await admin.from("user_menu_access").insert(rows);
+  // A foreign-key error means an item was deleted meanwhile.
+  return error ? "Couldn't save the access list. Reload and try again." : null;
+}

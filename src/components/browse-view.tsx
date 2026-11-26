@@ -24,7 +24,10 @@ function SectionHeader({ section, sub, count }: { section: Section; sub?: string
   const Icon = SECTION_ICONS[section.kind] ?? FolderIcon;
   const subs = section.subsections ?? [];
   const current = subs.find((x) => x.slug === sub);
-  const tabs = [{ slug: undefined as string | undefined, name: "All" }, ...subs.map((x) => ({ slug: x.slug as string | undefined, name: x.name }))];
+  const tabs = [
+    ...(section.partial ? [] : [{ slug: undefined as string | undefined, name: "All" }]),
+    ...subs.map((x) => ({ slug: x.slug as string | undefined, name: x.name })),
+  ];
   return (
     <header className="ng-section-head vh-route-in">
       <div className="flex min-w-0 items-center gap-4">

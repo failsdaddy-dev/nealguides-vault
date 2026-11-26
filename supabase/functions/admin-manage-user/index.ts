@@ -2,7 +2,7 @@
 //   disable          -> profile off + login banned: locked out at once
 //   enable           -> undo disable
 //   delete           -> removes the login and profile
-//   set_access       -> { all_access, filter_ids[] }
+//   set_access       -> { all_access, menu: { group_ids[], section_ids[], subsection_ids[] } }
 //   update           -> { display_name?, expires_at? (ISO or null) }
 //   reset_password   -> { password } (the editor signs in with it)
 import {
@@ -14,8 +14,11 @@ import {
   isUuid,
   json,
   originAllowed,
+  menuSize,
   passwordProblem,
   readJson,
+  readMenu,
+  saveMenu,
 } from "../_shared/common.ts";
 
 const FOREVER = "876000h"; // ~100 years
@@ -58,13 +61,22 @@ Deno.serve(async (req) => {
     }
     case "set_access": {
       const allAccess = b?.all_access === true;
-      const filterIds = Array.isArray(b?.filter_ids) ? b.filter_ids.filter(isUuid) : [];
-      await admin.from("profiles").update({ all_access: allAccess }).eq("id", userId);
-      await admin.from("user_filter_access").delete().eq("user_id", userId);
-      if (!allAccess && filterIds.length) {
-        await admin.from("user_filter_access").insert(filterIds.map((filter_id: string) => ({ user_id: userId, filter_id })));
+      const menu = readMenu(b?.menu);
+      if (!allAccess && menuSize(menu) === 0) {
+        return json(req, { error: "Choose at least one side-menu item, or turn on All access." }, 400);
       }
-      break;
+      // Save the list first, then switch access, so a failure never leaves
+      // a restricted editor with an empty list.
+      const mErr = await saveMenu(userId, allAccess ? { group_ids: [], section_ids: [], subsection_ids: [] } : menu);
+      if (mErr) return json(req, { error: mErr }, 400);
+      await admin.from("profiles").update({ all_access: allAccess }).eq("id", userId);
+      await audit(caller, "admin_set_access", {
+        user_id: userId,
+        email: target.email,
+        all_access: allAccess,
+        ...(allAccess ? {} : { groups: menu.group_ids.length, sections: menu.section_ids.length, subsections: menu.subsection_ids.length }),
+      });
+      return json(req, { ok: true });
     }
     case "update": {
       const patch: Record<string, unknown> = {};

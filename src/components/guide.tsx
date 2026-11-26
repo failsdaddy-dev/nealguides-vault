@@ -31,6 +31,8 @@ function SectionItem({ s, i, onNavigate }: { s: Section; i: number; onNavigate?:
   const active = current === s.slug;
   const sub = active ? params.get("sub") : null;
   const subs = s.subsections ?? [];
+  // Partly allowed section: no "All" entry; the row opens its first subsection.
+  const rowHref = s.partial && subs[0] ? `/${s.slug}?sub=${encodeURIComponent(subs[0].slug)}` : `/${s.slug}`;
   const [open, setOpen] = useState(active);
 
   // Opening a section from anywhere (link, back button) unfolds it here too.
@@ -45,7 +47,7 @@ function SectionItem({ s, i, onNavigate }: { s: Section; i: number; onNavigate?:
     <li style={{ "--i": i } as CSSProperties} className="ng-nav-item">
       <div className="ng-nav-row" data-active={active ? "" : undefined}>
         <Link
-          href={`/${s.slug}`}
+          href={rowHref}
           onClick={() => {
             if (subs.length) setOpen(true);
             onNavigate?.();
@@ -76,16 +78,18 @@ function SectionItem({ s, i, onNavigate }: { s: Section; i: number; onNavigate?:
         <div id={panelId} className="ng-subnav" data-open={open ? "" : undefined} inert={!open}>
           <div className="min-h-0 overflow-hidden">
             <ul className="ng-subnav-list">
-              <li>
-                <Link
-                  href={`/${s.slug}`}
-                  onClick={onNavigate}
-                  aria-current={active && !sub ? "page" : undefined}
-                  className="ng-subnav-link"
-                >
-                  All {s.name}
-                </Link>
-              </li>
+              {!s.partial && (
+                <li>
+                  <Link
+                    href={`/${s.slug}`}
+                    onClick={onNavigate}
+                    aria-current={active && !sub ? "page" : undefined}
+                    className="ng-subnav-link"
+                  >
+                    All {s.name}
+                  </Link>
+                </li>
+              )}
               {subs.map((x) => (
                 <li key={x.slug}>
                   <Link

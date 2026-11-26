@@ -38,13 +38,16 @@ export async function loadHubData(): Promise<HubData> {
   }
   const viewer = await requireViewer();
   const sb = await supabaseServer();
-  const [sections, subsections, groups, filters, sidebar] = await Promise.all([
+  const [sections, subsections, groups, filters, sidebar, partial] = await Promise.all([
     sb.from("sections").select("*").eq("is_visible", true).order("sort_order").order("name"),
     sb.from("subsections").select("section_id, slug, name").eq("is_visible", true).order("sort_order").order("name"),
     sb.from("filter_groups").select("id, slug, name").order("sort_order").order("name"),
     sb.from("filters").select("id, group_id, slug, name, is_quick").order("sort_order").order("name"),
     sb.from("section_groups").select("id, slug, name").eq("is_visible", true).order("sort_order").order("name"),
+    sb.rpc("my_partial_sections"),
   ]);
+  // Sections this editor sees only in part (menu access); empty on error.
+  const partialIds = new Set<string>(partial.error ? [] : ((partial.data ?? []) as string[]));
   // Until the sidebar-groups migration runs, everything sits in one "Vault" group.
   const sidebarRows = sidebar.error ? [{ id: "", slug: "vault", name: "Vault" }] : (sidebar.data ?? []);
   const groupSlugById = new Map(sidebarRows.map((g) => [g.id, g.slug]));
@@ -55,6 +58,7 @@ export async function loadHubData(): Promise<HubData> {
       name: s.name,
       kind: s.kind,
       groupSlug: sidebar.error ? "vault" : groupSlugById.get((s as { group_id?: string }).group_id ?? "") ?? "",
+      partial: partialIds.has(s.id),
       subsections: (subsections.data ?? []).filter((x) => x.section_id === s.id).map((x) => ({ slug: x.slug, name: x.name })),
     })),
     groups: groups.data ?? [],
@@ -73,15 +77,15 @@ export async function loadHubData(): Promise<HubData> {
 export async function findSection(slug: string): Promise<Section | null> {
   if (!SUPABASE_CONFIGURED) return SECTIONS.find((s) => s.slug === slug) ?? null;
   const sb = await supabaseServer();
-  const { data } = await sb
-    .from("sections")
-    .select("slug, name, kind, subsections(slug, name, is_visible, sort_order)")
-    .eq("slug", slug)
-    .maybeSingle();
+  const [{ data }, partial] = await Promise.all([
+    sb.from("sections").select("id, slug, name, kind, subsections(slug, name, is_visible, sort_order)").eq("slug", slug).maybeSingle(),
+    sb.rpc("my_partial_sections"),
+  ]);
   if (!data) return null;
+  const isPartial = !partial.error && ((partial.data ?? []) as string[]).includes(data.id);
   const subs = (data.subsections ?? [])
     .filter((x) => x.is_visible)
     .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name))
     .map((x) => ({ slug: x.slug, name: x.name }));
-  return { slug: data.slug, name: data.name, kind: data.kind, subsections: subs };
+  return { slug: data.slug, name: data.name, kind: data.kind, subsections: subs, partial: isPartial };
 }

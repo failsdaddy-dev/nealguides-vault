@@ -58,7 +58,7 @@ The project is linked with the Supabase CLI (`npx supabase login`, then
 - **Types:** after a schema change, `npm run db:types` regenerates
   `src/lib/database.types.ts`.
 - **Access test:** `supabase/tests/rls_test.sql` checks the row-level security
-  rules (87 checks).
+  rules (101 checks).
 - **Edge Functions** (`supabase/functions/`): `get-asset-link`,
   `admin-create-user`, `admin-manage-user`, `cloudinary-sign-upload`,
   `cloudinary-delete-preview`. Deploy with

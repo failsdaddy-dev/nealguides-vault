@@ -51,6 +51,8 @@ export interface Section {
   subsections?: Subsection[];
   /** The sidebar group this section sits in (e.g. "vault"). */
   groupSlug?: string;
+  /** This user may see only some of its subsections (no "All" entry). */
+  partial?: boolean;
 }
 
 /** Top-level button in the side menu (e.g. "Vault"); opens its sections. */

@@ -1,4 +1,6 @@
-// POST { email, password, display_name?, all_access?, filter_ids?, expires_at? }
+// POST { email, password, display_name?, all_access?, menu?, expires_at? }
+//   menu = { group_ids[], section_ids[], subsection_ids[] }: the side-menu items
+//   a restricted editor (all_access false) may see.
 // Admin only (active admin). Creates a confirmed login; the
 // editor signs in with the password the admin sets here. Invite only:
 // public sign-up is off, so this is the only way an account is made.
@@ -9,11 +11,13 @@ import {
   corsHeaders,
   getCaller,
   isAdmin,
-  isUuid,
   json,
+  menuSize,
   originAllowed,
   passwordProblem,
   readJson,
+  readMenu,
+  saveMenu,
 } from "../_shared/common.ts";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -32,13 +36,16 @@ Deno.serve(async (req) => {
   const password = typeof b?.password === "string" ? b.password : "";
   const displayName = typeof b?.display_name === "string" ? b.display_name.trim().slice(0, 80) : "";
   const allAccess = b?.all_access !== false;
-  const filterIds = Array.isArray(b?.filter_ids) ? b.filter_ids.filter(isUuid) : [];
+  const menu = readMenu(b?.menu);
   const expiresAt = typeof b?.expires_at === "string" && b.expires_at ? new Date(b.expires_at) : null;
 
   if (!EMAIL.test(email)) return json(req, { error: "Enter a valid email address." }, 400);
   const pwError = passwordProblem(password);
   if (pwError) return json(req, { error: pwError }, 400);
   if (expiresAt && Number.isNaN(expiresAt.getTime())) return json(req, { error: "The expiry date isn't valid." }, 400);
+  if (!allAccess && menuSize(menu) === 0) {
+    return json(req, { error: "Choose at least one side-menu item, or turn on All access." }, 400);
+  }
 
   const { data, error } = await admin.auth.admin.createUser({
     email,
@@ -65,10 +72,19 @@ Deno.serve(async (req) => {
     await admin.auth.admin.deleteUser(id);
     return json(req, { error: "Couldn't save the user's profile." }, 500);
   }
-  if (!allAccess && filterIds.length) {
-    await admin.from("user_filter_access").insert(filterIds.map((filter_id: string) => ({ user_id: id, filter_id })));
+  if (!allAccess) {
+    const mErr = await saveMenu(id, menu);
+    if (mErr) {
+      await admin.auth.admin.deleteUser(id);
+      return json(req, { error: mErr }, 400);
+    }
   }
 
-  await audit(caller, "admin_create_user", { user_id: id, email, all_access: allAccess, filters: filterIds.length });
+  await audit(caller, "admin_create_user", {
+    user_id: id,
+    email,
+    all_access: allAccess,
+    ...(allAccess ? {} : { groups: menu.group_ids.length, sections: menu.section_ids.length, subsections: menu.subsection_ids.length }),
+  });
   return json(req, { id });
 });

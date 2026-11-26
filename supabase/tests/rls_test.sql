@@ -16,7 +16,8 @@ declare
   u_restricted uuid := gen_random_uuid();
   u_disabled uuid := gen_random_uuid();
   u_expired uuid := gen_random_uuid();
-  sec2 uuid; sub1 uuid; sub_hidden uuid; l3 uuid; grp_hidden uuid; sec_hidden_grp uuid;
+  sec2 uuid; sub1 uuid; sub2 uuid; sub_hidden uuid; l3 uuid; grp_hidden uuid; sec_hidden_grp uuid;
+  grp_x uuid; sec4 uuid; c4 uuid; c5 uuid;
   sec uuid; g_client uuid; g_style uuid;
   f_ped uuid; f_cartoon uuid; f_fc20 uuid;
   c1 uuid; c2 uuid; c3 uuid; l1 uuid; l2 uuid;
@@ -44,7 +45,6 @@ begin
   insert into public.filters (group_id, slug, name) values (g_client, 'zz-test-ped', 'Zzped') returning id into f_ped;
   insert into public.filters (group_id, slug, name) values (g_style, 'zz-test-cartoon', 'Zzcartoonfilter') returning id into f_cartoon;
   insert into public.filters (group_id, slug, name) values (g_style, 'zz-test-fc20', 'Zzfc20') returning id into f_fc20;
-  insert into public.user_filter_access (user_id, filter_id) values (u_restricted, f_ped);
 
   insert into public.cards (section_id, slug, title, status) values (sec, 'q-mark', 'Zz question mark pop', 'published') returning id into c1;
   insert into public.cards (section_id, slug, title, status) values (sec, 'tv-doc', 'Zz tv documentary', 'published') returning id into c2;
@@ -111,6 +111,10 @@ begin
   insert into public.subsections (section_id, slug, name) values (sec, 'zz-shorts', 'Zz shorts') returning id into sub1;
   insert into public.subsections (section_id, slug, name, is_visible) values (sec, 'zz-hidden', 'Zz hidden', false) returning id into sub_hidden;
   update public.cards set subsection_id = sub1 where id = c1;
+  insert into public.subsections (section_id, slug, name) values (sec, 'zz-reels', 'Zz reels') returning id into sub2;
+  -- Menu access: the restricted editor may see only subsection "Zz shorts"
+  -- (where card c1 sits), not the rest of the section.
+  insert into public.user_menu_access (user_id, subsection_id) values (u_restricted, sub1);
   insert into public.sections (slug, name, kind) values ('zz-test-sec2', 'Zz test 2', 'music') returning id into sec2;
   begin
     insert into public.cards (section_id, subsection_id, slug, title) values (sec2, sub1, 'zz-wrong', 'Zz wrong'); ok := false;
@@ -126,6 +130,16 @@ begin
     delete from public.section_groups where id = grp_hidden; ok := false;
   exception when foreign_key_violation then ok := true; end;
   names := array_append(names, ('a group that still has sections cannot be deleted')::text); oks := array_append(oks, (ok)::boolean);
+  insert into public.cards (section_id, slug, title, status) values (sec2, 'zz-sec2-card', 'Zz sec2 card', 'published') returning id into c4;
+  -- A whole group granted, then a section added to it afterwards.
+  insert into public.section_groups (slug, name) values ('zz-grp-socials', 'Zz socials') returning id into grp_x;
+  insert into public.user_menu_access (user_id, group_id) values (u_restricted, grp_x);
+  insert into public.sections (slug, name, kind, group_id) values ('zz-test-sec4', 'Zz test 4', 'gameplay', grp_x) returning id into sec4;
+  insert into public.cards (section_id, slug, title, status) values (sec4, 'zz-sec4-card', 'Zz sec4 card', 'published') returning id into c5;
+  begin
+    insert into public.user_menu_access (user_id, group_id, section_id) values (u_restricted, grp_x, sec4); ok := false;
+  exception when check_violation then ok := true; end;
+  names := array_append(names, ('a menu access row names exactly one item')::text); oks := array_append(oks, (ok)::boolean);
 
   -- --------------------------------------------------------------- anon
   begin
@@ -185,7 +199,7 @@ begin
   select count(*) into n from public.browse_cards(p_section => 'zz-test-sec', p_sub => 'no-such-sub');
   names := array_append(names, (format('unknown subsection returns nothing (got %s)', n))::text); oks := array_append(oks, ((n = 0))::boolean);
   select count(*) into n from public.subsections where section_id = sec;
-  names := array_append(names, (format('editor sees visible subsections only (got %s, want 1)', n))::text); oks := array_append(oks, ((n = 1))::boolean);
+  names := array_append(names, (format('editor sees visible subsections only (got %s, want 2)', n))::text); oks := array_append(oks, ((n = 2))::boolean);
   select count(*) into n from public.card_links where card_id = c2 and host = 'google-drive';
   names := array_append(names, ('editor can read link host badges')::text); oks := array_append(oks, ((n = 1))::boolean);
   select count(*) into n from public.section_groups where id = grp_hidden;
@@ -196,23 +210,23 @@ begin
   names := array_append(names, ('editor sees the visible Vault group')::text); oks := array_append(oks, ((n = 1))::boolean);
   execute 'reset role';
 
-  -- --------------------------------------------------- restricted (PED only)
+  -- ------------------------- restricted (menu access: one subsection + one group)
   perform set_config('request.jwt.claims', json_build_object('sub', u_restricted, 'role', 'authenticated', 'aal', 'aal1')::text, true);
   execute 'set local role authenticated';
   select count(*) into n from public.cards where section_id = sec;
-  names := array_append(names, (format('restricted sees only the PED card (got %s, want 1)', n))::text); oks := array_append(oks, ((n = 1))::boolean);
+  names := array_append(names, (format('restricted sees only the card in their subsection (got %s, want 1)', n))::text); oks := array_append(oks, ((n = 1))::boolean);
   select count(*) into n from public.cards where id = c2;
-  names := array_append(names, ('restricted cannot open a non-PED card by id')::text); oks := array_append(oks, ((n = 0))::boolean);
+  names := array_append(names, ('restricted cannot open a card outside their menu by id')::text); oks := array_append(oks, ((n = 0))::boolean);
   select count(*) into n from public.cards where id = c3;
-  names := array_append(names, ('restricted cannot see a draft, even with PED')::text); oks := array_append(oks, ((n = 0))::boolean);
+  names := array_append(names, ('restricted cannot see a draft, even inside their menu')::text); oks := array_append(oks, ((n = 0))::boolean);
   select count(*) into n from public.browse_cards(p_section => 'zz-test-sec', p_q => 'documentary');
-  names := array_append(names, (format('restricted search cannot find the non-PED card (got %s)', n))::text); oks := array_append(oks, ((n = 0))::boolean);
+  names := array_append(names, (format('restricted search cannot find a card outside their menu (got %s)', n))::text); oks := array_append(oks, ((n = 0))::boolean);
   select count(*) into n from public.browse_cards(p_section => 'zz-test-sec', p_filters => array['zz-test-fc20']);
   names := array_append(names, (format('restricted link with a hidden filter shows nothing (got %s)', n))::text); oks := array_append(oks, ((n = 0))::boolean);
   select count(*) into n from public.filters where id = f_fc20;
   names := array_append(names, ('restricted cannot discover a filter used only outside their scope')::text); oks := array_append(oks, ((n = 0))::boolean);
   select count(*) into n from public.filters where id in (f_ped, f_cartoon);
-  names := array_append(names, (format('restricted sees their own filter and filters on visible cards (got %s, want 2)', n))::text); oks := array_append(oks, ((n = 2))::boolean);
+  names := array_append(names, (format('restricted sees filters on visible cards (got %s, want 2)', n))::text); oks := array_append(oks, ((n = 2))::boolean);
   select count(*) into n from public.filter_groups where id in (g_client, g_style);
   names := array_append(names, (format('restricted sees only groups with visible filters (got %s, want 2)', n))::text); oks := array_append(oks, ((n = 2))::boolean);
   select coalesce(sum(card_count), 0) into n from public.filter_counts('zz-test-sec') where filter_id = f_cartoon;
@@ -223,7 +237,42 @@ begin
   names := array_append(names, (format('restricted sees only their own profile (got %s)', n))::text); oks := array_append(oks, ((n = 1))::boolean);
   select count(*) into n from public.audit_log;
   names := array_append(names, ('restricted cannot read the audit log')::text); oks := array_append(oks, ((n = 0))::boolean);
+  select count(*) into n from public.sections where id = sec;
+  names := array_append(names, ('menu: a section shows when one of its subsections is allowed')::text); oks := array_append(oks, (n = 1)::boolean);
+  select count(*) into n from public.subsections where section_id = sec;
+  names := array_append(names, (format('menu: only the allowed subsection shows (got %s, want 1)', n))::text); oks := array_append(oks, (n = 1)::boolean);
+  select count(*) into n from public.my_partial_sections() as p (id) where p.id = sec;
+  names := array_append(names, ('menu: that section is marked partial (no All entry)')::text); oks := array_append(oks, (n = 1)::boolean);
+  select count(*) into n from public.sections where id = sec2;
+  names := array_append(names, ('menu: a section with nothing allowed is hidden')::text); oks := array_append(oks, (n = 0)::boolean);
+  select count(*) into n from public.cards where id = c4;
+  names := array_append(names, ('menu: a card in a hidden section is hidden')::text); oks := array_append(oks, (n = 0)::boolean);
+  select count(*) into n from public.section_groups where id = grp_x;
+  names := array_append(names, ('menu: an allowed group shows')::text); oks := array_append(oks, (n = 1)::boolean);
+  select count(*) into n from public.sections where id = sec4;
+  names := array_append(names, ('menu: a section added to an allowed group later shows')::text); oks := array_append(oks, (n = 1)::boolean);
+  select count(*) into n from public.cards where id = c5;
+  names := array_append(names, ('menu: its cards show too')::text); oks := array_append(oks, (n = 1)::boolean);
+  select count(*) into n from public.my_partial_sections() as p (id) where p.id = sec4;
+  names := array_append(names, ('menu: a section in an allowed group is whole, not partial')::text); oks := array_append(oks, (n = 0)::boolean);
+  select count(*) into n from public.section_groups where id = grp_hidden;
+  names := array_append(names, ('menu: a group with nothing allowed is hidden')::text); oks := array_append(oks, (n = 0)::boolean);
+  select count(*) into n from public.user_menu_access;
+  names := array_append(names, (format('restricted reads only their own access rows (got %s, want 2)', n))::text); oks := array_append(oks, (n = 2)::boolean);
   execute 'reset role';
+  -- whole-section grant
+  insert into public.user_menu_access (user_id, section_id) values (u_restricted, sec2);
+  execute 'set local role authenticated';
+  select count(*) into n from public.cards where id = c4;
+  execute 'reset role';
+  names := array_append(names, ('menu: a whole section grant shows its main-list cards')::text); oks := array_append(oks, (n = 1)::boolean);
+  -- all access: every section, none partial
+  perform set_config('request.jwt.claims', json_build_object('sub', u_senior, 'role', 'authenticated', 'aal', 'aal1')::text, true);
+  execute 'set local role authenticated';
+  select count(*) into n from public.sections where id in (sec, sec2, sec4);
+  select count(*) * 10 + n into n from public.my_partial_sections();
+  execute 'reset role';
+  names := array_append(names, (format('all access: every section, none partial (got %s, want 3)', n))::text); oks := array_append(oks, (n = 3)::boolean);
 
   -- restricted: things that must be refused outright
   perform set_config('request.jwt.claims', json_build_object('sub', u_restricted, 'role', 'authenticated', 'aal', 'aal2')::text, true);
@@ -288,9 +337,9 @@ begin
   execute 'reset role'; names := array_append(names, ('editor cannot change their own access')::text); oks := array_append(oks, (ok)::boolean);
 
   begin execute 'set local role authenticated';
-    insert into public.user_filter_access values (u_restricted, f_fc20); ok := false;
+    insert into public.user_menu_access (user_id, section_id) values (u_restricted, sec); ok := false;
   exception when insufficient_privilege then ok := true; end;
-  execute 'reset role'; names := array_append(names, ('editor cannot grant themselves filters')::text); oks := array_append(oks, (ok)::boolean);
+  execute 'reset role'; names := array_append(names, ('editor cannot grant themselves menu access')::text); oks := array_append(oks, (ok)::boolean);
 
   -- ------------------------------------------------ disabled and expired
   perform set_config('request.jwt.claims', json_build_object('sub', u_disabled, 'role', 'authenticated', 'aal', 'aal1')::text, true);
@@ -314,7 +363,7 @@ begin
   select count(*) into n from public.cards where section_id = sec;
   names := array_append(names, (format('admin (password session) can write and sees drafts (got %s, want 4)', n))::text); oks := array_append(oks, ((n = 4))::boolean);
   select count(*) into n from public.subsections where section_id = sec;
-  names := array_append(names, (format('admin sees hidden subsections too (got %s, want 2)', n))::text); oks := array_append(oks, ((n = 2))::boolean);
+  names := array_append(names, (format('admin sees hidden subsections too (got %s, want 3)', n))::text); oks := array_append(oks, ((n = 3))::boolean);
   perform public.admin_reorder('subsections', array[sub_hidden, sub1]);
   select count(*) into n from public.subsections where (id = sub_hidden and sort_order = 10) or (id = sub1 and sort_order = 20);
   names := array_append(names, ('admin_reorder orders subsections')::text); oks := array_append(oks, ((n = 2))::boolean);

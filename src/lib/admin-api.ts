@@ -311,14 +311,28 @@ export async function deleteSubsection(id: string) {
 }
 
 // ------------------------------------------------------------------ users
+/** Side-menu items a restricted editor may see (all_access off). */
+export interface MenuAccess {
+  group_ids: string[];
+  section_ids: string[];
+  subsection_ids: string[];
+}
+export const emptyMenu = (): MenuAccess => ({ group_ids: [], section_ids: [], subsection_ids: [] });
+
 export async function listUsers() {
   const [profiles, access] = await Promise.all([
     sb().from("profiles").select("*").order("created_at", { ascending: false }),
-    sb().from("user_filter_access").select("user_id, filter_id"),
+    sb().from("user_menu_access").select("user_id, group_id, section_id, subsection_id"),
   ]);
-  const byUser = new Map<string, string[]>();
-  for (const a of check(access) ?? []) byUser.set(a.user_id, [...(byUser.get(a.user_id) ?? []), a.filter_id]);
-  return (check(profiles) ?? []).map((p) => ({ ...p, filter_ids: byUser.get(p.id) ?? [] }));
+  const byUser = new Map<string, MenuAccess>();
+  for (const a of check(access) ?? []) {
+    const m = byUser.get(a.user_id) ?? emptyMenu();
+    if (a.group_id) m.group_ids.push(a.group_id);
+    if (a.section_id) m.section_ids.push(a.section_id);
+    if (a.subsection_id) m.subsection_ids.push(a.subsection_id);
+    byUser.set(a.user_id, m);
+  }
+  return (check(profiles) ?? []).map((p) => ({ ...p, menu: byUser.get(p.id) ?? emptyMenu() }));
 }
 export type UserWithAccess = Awaited<ReturnType<typeof listUsers>>[number];
 
@@ -343,7 +357,7 @@ export const createUser = (body: {
   password: string;
   display_name: string;
   all_access: boolean;
-  filter_ids: string[];
+  menu: MenuAccess;
   expires_at: string | null;
 }) => invoke("admin-create-user", body);
 

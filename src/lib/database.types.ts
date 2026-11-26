@@ -442,29 +442,55 @@ export type Database = {
           },
         ]
       }
-      user_filter_access: {
+      user_menu_access: {
         Row: {
-          filter_id: string
+          created_at: string
+          group_id: string | null
+          id: string
+          section_id: string | null
+          subsection_id: string | null
           user_id: string
         }
         Insert: {
-          filter_id: string
+          created_at?: string
+          group_id?: string | null
+          id?: string
+          section_id?: string | null
+          subsection_id?: string | null
           user_id: string
         }
         Update: {
-          filter_id?: string
+          created_at?: string
+          group_id?: string | null
+          id?: string
+          section_id?: string | null
+          subsection_id?: string | null
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "user_filter_access_filter_id_fkey"
-            columns: ["filter_id"]
+            foreignKeyName: "user_menu_access_group_id_fkey"
+            columns: ["group_id"]
             isOneToOne: false
-            referencedRelation: "filters"
+            referencedRelation: "section_groups"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_filter_access_user_id_fkey"
+            foreignKeyName: "user_menu_access_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "sections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_menu_access_subsection_id_fkey"
+            columns: ["subsection_id"]
+            isOneToOne: false
+            referencedRelation: "subsections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_menu_access_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -557,6 +583,7 @@ export type Database = {
           filter_id: string
         }[]
       }
+      my_partial_sections: { Args: never; Returns: string[] }
       release_asset_link: {
         Args: { p_link: string; p_user: string }
         Returns: string

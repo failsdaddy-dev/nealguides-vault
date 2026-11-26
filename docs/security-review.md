@@ -1,6 +1,6 @@
 # Neal Guides Vault: security review notes
 
-Last reviewed: 2026-11-23 (Phase 4). These notes describe how the app is
+Last reviewed: 2026-11-26 (menu-based access added). These notes describe how the app is
 protected today, what was checked, and what is still open. They hold no
 secrets.
 
@@ -9,7 +9,8 @@ secrets.
 | Who | Can | Cannot |
 | --- | --- | --- |
 | Not signed in | See the landing page and the login page | Read any table, call any function, open any library page |
-| Editor (active, not expired) | Browse published cards they are allowed to see (all cards when "all access" is on, otherwise cards with one of their tags), open download links | See drafts, write anything, see link URLs in page data |
+| Editor with All access (the default) | The whole side menu and every published card, open download links | See drafts, write anything, see link URLs in page data |
+| Editor with All access off | Only the side-menu items the admin ticked (whole groups, whole sections or single subsections) and only the cards inside them, in the menu, search, counts, card pages and downloads | Anything outside those items, even by typing a URL |
 | Disabled or expired user | Nothing, even with a still-valid login token | |
 | Admin (active, not expired) | Everything in the admin panel: side menu groups, sections, subsections, cards, tags, users, audit log | |
 
@@ -27,8 +28,9 @@ Every rule is enforced on the server. The UI only hides what a user cannot use.
 2. **Admin gate (`src/components/admin/gate.tsx`)**: every admin page calls
    `requireAdmin()` on the server before rendering.
 3. **Row-level security (Postgres)**: the database checks every read and write
-   again (`supabase/migrations/20261120100100_access_rules.sql` and the
-   sidebar-groups migration). Role comes from the `profiles` table only, never
+   again (`supabase/migrations/20261120100100_access_rules.sql`, the
+   sidebar-groups migration and `20261126100000_menu_access.sql`, which limits
+   restricted editors to the side-menu items in `user_menu_access`). Role comes from the `profiles` table only, never
    from user-editable metadata.
 4. **Edge Functions**: each one verifies the caller's token in code
    (`getCaller` → `getClaims`), checks the caller is an active admin where
@@ -85,8 +87,8 @@ read it in Admin → Audit log.
 
 ## 8. What was checked
 
-- RLS test (`supabase/tests/rls_test.sql`): 87 of 87 checks pass against the
-  live project after the sidebar-groups migration.
+- RLS test (`supabase/tests/rls_test.sql`): 101 of 101 checks pass against the
+  live project after the menu-access migration (2026-11-26).
 - Supabase security advisors were run with the Supabase CLI; the only open item
   is the dashboard setting in section 9.
 - `.env`, `.env.local` and `supabase/functions/.env` are git-ignored;
